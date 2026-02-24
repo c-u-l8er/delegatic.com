@@ -13,6 +13,8 @@
 
 Delegatic is the **governance and orchestration layer** for multi-agent AI systems. It defines who can do what, enforces policy boundaries, manages organizational hierarchy, and provides immutable audit trails for every decision. It does not execute tasks, host agents, or run workflows — it defines the structure within which all other [&] products operate.
 
+As the stack becomes more autonomous over time, Delegatic also becomes the place where **durable intent is referenced and governed**: it stores **references** to Graphonomous GoalGraph `goal_id`s (never the goal content itself) so that task requests, workflow runs, and sensitive mutations can be authorized and audited *in the context of an explicit goal*.
+
 ### 1.1 The Problem
 
 As AI agent teams scale beyond a handful of agents, organizations face a governance crisis: who authorized this agent to access customer data? Why did this workflow run without approval? Which team's budget was charged? Current agent frameworks (CrewAI, LangGraph, AutoGen) have zero governance primitives. They assume a single developer controls everything. That breaks at enterprise scale.
@@ -23,8 +25,9 @@ As AI agent teams scale beyond a handful of agents, organizations face a governa
 2. **Monotonic policy inheritance** — Children can tighten but never widen parent restrictions. Privilege escalation is impossible by design.
 3. **Deny by default** — No implicit permissions. Every capability must be explicitly granted at some level.
 4. **Append-only audit** — Every mutation is logged immutably with actor, timestamp, and provenance.
-5. **References, not copies** — Delegatic stores IDs to telespaces, agents, and workflows. It never copies their data. Zero duplication.
-6. **Governance, not execution** — Delegatic defines boundaries. AgenTroMatic automates within them. Distinct layers.
+5. **References, not copies** — Delegatic stores IDs to telespaces, agents, workflows, and goals. It never copies their data. Zero duplication.
+6. **Goal-aware governance** — Delegatic can require that actions and workflows declare a `goal_id`, enforce policies against the goal’s context (org, horizon, status), and ensure audits remain interpretable over long horizons.
+7. **Governance, not execution** — Delegatic defines boundaries. AgenTroMatic automates within them. Distinct layers.
 
 ### 1.3 Why Elixir
 
@@ -84,12 +87,28 @@ The containment tree maps directly to OTP supervision trees. Each organization i
 ├──────────────────────────────────────────────────────────────┤
 │   External References (by ID only)                             │
 │   ├── Agentelic telespace IDs                                  │
+│   ├── Graphonomous GoalGraph goal IDs                          │
 │   ├── AgenTroMatic workflow IDs (optional)                     │
 │   └── WHS agent IDs (optional)                                 │
 └──────────────────────────────────────────────────────────────┘
 ```
 
-### 2.1 OTP Supervision Tree
+### 2.1 GoalGraph Integration (Graphonomous)
+
+Delegatic does **not** implement goals; Graphonomous does. Delegatic integrates by **referencing** GoalGraph nodes and using them as durable routing / auditing anchors.
+
+**Key ideas:**
+- **Reference-only**: Delegatic stores `goal_id` (Graphonomous) and optional local tags, but never copies goal content, decomposition, or completion criteria.
+- **Goal-aware routing boundary**: when a task/workflow request arrives with a `goal_id`, Delegatic can:
+  - verify the caller/org is authorized to act under that goal reference,
+  - enforce policy constraints (e.g. “long-horizon goals require admin role”, “agent deploy actions must be goal-scoped”),
+  - write audit events with `goal_id` so later reviews can reconstruct intent.
+
+**Contract expectations (cross-product):**
+- Orchestrators/executors (e.g. AgenTroMatic / OpenSentience wrappers) should include `goal_id` on task requests whenever the work is part of a persistent objective.
+- If `goal_id` is omitted, Delegatic treats the action as *unscoped* (stricter defaults and/or additional approvals are expected at higher layers).
+
+### 2.2 OTP Supervision Tree
 
 ```
 Delegatic.Application
@@ -114,7 +133,7 @@ Each `Delegatic.OrgNode` GenServer holds:
 - Cached effective policy (computed on startup, invalidated on parent change)
 - List of child org PIDs
 
-### 2.2 Component Summary
+### 2.3 Component Summary
 
 | Component | Responsibility | OTP Pattern |
 |-----------|---------------|-------------|
@@ -146,6 +165,7 @@ defmodule Delegatic.Orgs.Org do
     has_one :policy, Delegatic.Policies.Policy
     has_many :memberships, Delegatic.Memberships.Membership
     has_many :org_telespaces, Delegatic.Attachments.OrgTelespace
+    has_many :org_goals, Delegatic.Attachments.OrgGoal
 
     timestamps()
   end
@@ -167,7 +187,67 @@ end
 - Max depth: 50 levels. Max total orgs per root: 10,000
 - Slug globally unique, lowercase alphanumeric + hyphens
 
-### 3.2 Memberships
+### 3.2 Goal Attachments (GoalGraph References)
+
+Delegatic stores goal references as attachments so orgs can:
+- scope automation to explicit durable intent,
+- audit actions against a goal over long time horizons,
+- revoke/disable goal-linked automation without deleting goal data.
+
+**Attachment model (reference-only):**
+- `org_id` — owning org in Delegatic
+- `goal_id` — Graphonomous GoalGraph node ID (opaque string)
+- `tags` — optional local labels (e.g. `"customer:acme"`, `"initiative:q1"`)
+- `created_by` — actor who attached the goal reference
+- `created_at`
+
+**Important:** goal status (`active/completed/failed/suspended`), decomposition, and completion criteria live in Graphonomous, not Delegatic.
+
+#### OrgGoal Attachment Schema (Ecto)
+
+```elixir
+defmodule Delegatic.Attachments.OrgGoal do
+  use Ecto.Schema
+  import Ecto.Changeset
+
+  @primary_key {:id, :binary_id, autogenerate: true}
+
+  schema "org_goals" do
+    belongs_to :org, Delegatic.Orgs.Org, type: :binary_id
+
+    # Opaque reference to Graphonomous GoalGraph node ID
+    field :goal_id, :string
+
+    # Local-only annotations (do not duplicate goal content)
+    field :tags, {:array, :string}, default: []
+    field :metadata, :map, default: %{}
+
+    # Governance lifecycle of the attachment itself
+    field :status, Ecto.Enum, values: [:active, :revoked], default: :active
+
+    belongs_to :created_by, Delegatic.Accounts.User, type: :binary_id
+
+    timestamps()
+  end
+
+  def changeset(org_goal, attrs) do
+    org_goal
+    |> cast(attrs, [:org_id, :goal_id, :tags, :metadata, :status, :created_by_id])
+    |> validate_required([:org_id, :goal_id, :created_by_id])
+    |> validate_length(:goal_id, min: 8)
+    |> foreign_key_constraint(:org_id)
+    |> foreign_key_constraint(:created_by_id)
+    |> unique_constraint([:org_id, :goal_id], name: :org_goals_org_id_goal_id_index)
+  end
+end
+```
+
+**Invariants:**
+- `goal_id` is treated as an opaque string (no parsing/semantics in Delegatic).
+- Uniqueness per org: `{org_id, goal_id}` is unique.
+- Revocation is soft (`status: :revoked`) so audits remain interpretable; no deletes are required.
+
+### 3.3 Memberships
 
 ```elixir
 defmodule Delegatic.Memberships.Membership do
@@ -190,7 +270,7 @@ end
 - Role hierarchy: owner > admin > member > viewer
 - Only owners can grant owner. Only owners/admins can grant admin.
 
-### 3.3 Policies
+### 3.4 Policies
 
 ```elixir
 defmodule Delegatic.Policies.Policy do
@@ -222,7 +302,7 @@ defmodule Delegatic.Policies.Policy do
 end
 ```
 
-### 3.4 Effective Policy Computation
+### 3.5 Effective Policy Computation
 
 ```elixir
 defmodule Delegatic.PolicyEngine do
@@ -306,7 +386,7 @@ defmodule Delegatic.PolicyEngine do
 end
 ```
 
-### 3.5 Audit Events (Append-Only)
+### 3.6 Audit Events (Append-Only)
 
 ```elixir
 defmodule Delegatic.Audit.Event do
@@ -317,6 +397,11 @@ defmodule Delegatic.Audit.Event do
     field :action, :string
     field :target_type, :string
     field :target_id, :string
+
+    # GoalGraph context (Graphonomous goal IDs; references only)
+    field :goal_id, :string
+    field :goal_context, :map, default: %{}
+
     field :previous_value, :map
     field :new_value, :map
     field :metadata, :map, default: %{}

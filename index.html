@@ -1043,7 +1043,9 @@
                 <p class="section-sub">
                     Delegatic doesn't route tasks or execute workflows. It
                     defines who is allowed to, what the boundaries are, and
-                    proves every decision.
+                    proves every decision — including whether an action was
+                    taken under an explicit <code>goal_id</code> (a GoalGraph
+                    reference) or unscoped.
                 </p>
                 <div class="concept-grid">
                     <div class="concept-card">
@@ -1086,9 +1088,11 @@
                         <span class="concept-icon">🔗</span>
                         <h4>References, Not Copies</h4>
                         <p>
-                            Delegatic stores org IDs, telespace IDs, and policy
-                            rules. It never copies agent configs, messages, or
-                            execution logs. Zero data duplication.
+                            Delegatic stores org IDs, telespace IDs, policy
+                            rules, and GoalGraph <code>goal_id</code>
+                            references. It never copies agent configs, messages,
+                            execution logs, or goal content — only opaque IDs.
+                            Zero data duplication.
                         </p>
                     </div>
                     <div class="concept-card">
