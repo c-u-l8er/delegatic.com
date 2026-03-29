@@ -292,9 +292,17 @@ defmodule Delegatic.Policies.Policy do
     field :max_workflows, :integer
     field :max_members_per_org, :integer
 
+    # Budget limits (MIN down the tree) — cost accounting across the agent ecosystem
+    field :max_tokens_per_task, :integer           # MAX tokens a single task may consume
+    field :max_tokens_per_period, :integer         # MAX tokens per billing period (monthly)
+    field :max_cost_usd_per_period, :decimal       # MAX USD spend per billing period
+    field :max_cost_usd_per_task, :decimal         # MAX USD spend per single task
+    field :max_compute_ms_per_task, :integer       # MAX compute milliseconds per task
+
     # List policies
     field :allowed_runtimes, {:array, :string}    # INTERSECTION
     field :allowed_models, {:array, :string}       # INTERSECTION
+    field :allowed_model_tiers, {:array, :string}  # INTERSECTION (local_small, local_large, cloud_frontier)
     field :denied_tools, {:array, :string}         # UNION
 
     timestamps()
@@ -346,9 +354,16 @@ defmodule Delegatic.PolicyEngine do
       max_agents:       min_non_nil(parent_acc[:max_agents], child_policy[:max_agents]),
       max_telespaces:   min_non_nil(parent_acc[:max_telespaces], child_policy[:max_telespaces]),
       max_workflows:    min_non_nil(parent_acc[:max_workflows], child_policy[:max_workflows]),
+      # Budget limits: MIN (child can only lower — monotonic cost containment)
+      max_tokens_per_task:      min_non_nil(parent_acc[:max_tokens_per_task], child_policy[:max_tokens_per_task]),
+      max_tokens_per_period:    min_non_nil(parent_acc[:max_tokens_per_period], child_policy[:max_tokens_per_period]),
+      max_cost_usd_per_period:  min_non_nil(parent_acc[:max_cost_usd_per_period], child_policy[:max_cost_usd_per_period]),
+      max_cost_usd_per_task:    min_non_nil(parent_acc[:max_cost_usd_per_task], child_policy[:max_cost_usd_per_task]),
+      max_compute_ms_per_task:  min_non_nil(parent_acc[:max_compute_ms_per_task], child_policy[:max_compute_ms_per_task]),
       # Allow-lists: INTERSECTION (child can only narrow)
-      allowed_runtimes: intersect(parent_acc[:allowed_runtimes], child_policy[:allowed_runtimes]),
-      allowed_models:   intersect(parent_acc[:allowed_models], child_policy[:allowed_models]),
+      allowed_runtimes:    intersect(parent_acc[:allowed_runtimes], child_policy[:allowed_runtimes]),
+      allowed_models:      intersect(parent_acc[:allowed_models], child_policy[:allowed_models]),
+      allowed_model_tiers: intersect(parent_acc[:allowed_model_tiers], child_policy[:allowed_model_tiers]),
       # Deny-lists: UNION (child can only add)
       denied_tools: union(parent_acc[:denied_tools], child_policy[:denied_tools]),
     }
@@ -359,6 +374,10 @@ defmodule Delegatic.PolicyEngine do
       allow_telespace_attach: false, allow_external_api: false,
       allow_agent_deploy: false, allow_workflow_create: false,
       max_agents: 0, max_telespaces: 0, max_workflows: 0,
+      max_tokens_per_task: nil, max_tokens_per_period: nil,
+      max_cost_usd_per_period: nil, max_cost_usd_per_task: nil,
+      max_compute_ms_per_task: nil,
+      allowed_model_tiers: ["local_small", "local_large", "cloud_frontier"],
     }, eff)
   end
 
