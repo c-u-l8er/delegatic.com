@@ -517,6 +517,48 @@ end
 
 ---
 
+## 5.1 PULSE Loop Manifest
+
+Delegatic is a **PULSE-conforming loop** under OS-010, and is the **canonical PULSE substrate for `policy` and `audit`** — every other [&] loop in the ecosystem references `delegatic://workspace/{ws_id}` and `delegatic://workspace/{ws_id}/audit` in their substrates blocks.
+
+**Loop ID:** `delegatic.governance`
+**Loop name:** Delegatic Governance Loop
+**Version:** 0.1.0
+**Owner:** delegatic.com
+**Workspace scope:** required
+
+**Phases (5 canonical kinds):**
+
+| Phase ID | Kind | Description |
+|---|---|---|
+| `retrieve_policy` | `retrieve` | Resolve effective policy for `(actor, operation, scope)` walking the containment tree |
+| `route_decision` | `route` | Decide allow/deny/escalate; on policy gap, escalate to parent org |
+| `act_enforce` | `act` | Issue allow/deny verdict; on allow, record `permission_check` audit event |
+| `learn_drift` | `learn` | Detect policy drift / unused permissions / goal-vs-action divergence |
+| `consolidate_audit` | `consolidate` | Append-only audit batch flush via Broadway; periodic compliance exports |
+
+**Closure:** `consolidate_audit → retrieve_policy` via PostgreSQL, guarantee `eventual`.
+
+**Cadence:** `event` (every permission check). Fallback `periodic` (drift detection, compliance exports).
+
+**Substrates:**
+- `memory`: `graphonomous://workspace/{ws_id}` (goal graph references)
+- `policy`: **self** (`delegatic://workspace/{ws_id}` — Delegatic is its own canonical policy substrate)
+- `audit`: **self** (`delegatic://workspace/{ws_id}/audit`)
+- `auth`: `open_sentience://workspace/{ws_id}`
+- `transport`: `mcp` (Hermes)
+- `time`: `ticktickclock://workspace/{ws_id}` (optional, for time-window policies)
+
+**Invariants enabled:** all seven, with `append_only_audit` and `monotonic_policy_inheritance` (a Delegatic-specific extension to the standard `kappa_routing`-style invariant flag, declared via the `invariant` field on `act_enforce`).
+
+**Cross-loop connections:**
+- `policy_invalidated` — emits `ConsolidationEvent` from `consolidate_audit` whenever effective policy changes; subscribed to by every loop that caches policy in ETS (so all caches flush together)
+- `goal_violation_to_prism` — emits `OutcomeSignal` (governance violation) from `learn_drift` to `prism.benchmark.observe`
+
+**Why this matters:** because Delegatic is the canonical policy/audit substrate, every other loop's `trace_id_propagation` invariant terminates in Delegatic's append-only audit log. This is what makes the [&] ecosystem **end-to-end auditable**: a single `trace_id` can be followed from the originating `retrieve` phase, through every intermediate loop, to the final commit — across product boundaries.
+
+---
+
 ## 6. Tech Stack
 
 | Layer | Technology | Rationale |
