@@ -2,6 +2,8 @@
 
 > **Structure first. Then delegate.**
 
+> **Part of the [&] Protocol stack** · [Ecosystem overview](../../ECOSYSTEM.md) · [Three-protocol stack](../../PULSE/docs/THREE_PROTOCOL_STACK.md) · [Stack status](../../STACK_COMPLETION.md)
+
 Welcome to the documentation hub for **Delegatic** — the governance and
 orchestration layer for multi-agent AI systems. Delegatic defines who can do what,
 enforces policy boundaries, manages organizational hierarchy, and provides
@@ -146,6 +148,7 @@ Delegatic is the **governance layer** of the [&] stack:
 ## Project Links
 
 - **Spec:** [Technical Specification](spec/README.md)
+- **User stories:** [Delegatic User Stories](ux/user-stories.md)
 - **[&] Protocol ecosystem:** `AmpersandBoxDesign/`
 
 ---
