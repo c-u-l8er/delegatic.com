@@ -855,6 +855,168 @@
                     overflow-x: auto;
                 }
             }
+
+            /* ── G1: THE MEMBERSHIP RULE ── */
+            .g1-section {
+                padding: 5rem 0;
+                border-top: 1px solid var(--br);
+            }
+            .g1-q {
+                font-family: var(--fs);
+                font-size: clamp(1.2rem, 2.6vw, 1.6rem);
+                line-height: 1.5;
+                color: var(--tx);
+                margin: 2rem 0 1.25rem;
+                max-width: 620px;
+            }
+            .g1-src {
+                margin: 2rem 0 2.5rem;
+                padding: 1rem 1.25rem;
+                border: 1px solid var(--br);
+                border-left: 2px solid var(--am);
+                border-radius: 8px;
+                background: var(--s1);
+                font-size: 0.75rem;
+                font-weight: 300;
+                color: var(--tm);
+                line-height: 1.8;
+            }
+            .g1-src .warn {
+                color: var(--am);
+            }
+            .g1-grid {
+                display: grid;
+                grid-template-columns: repeat(2, 1fr);
+                gap: 1px;
+                background: var(--br);
+                border: 1px solid var(--br);
+                border-radius: 12px;
+                overflow: hidden;
+                margin-top: 2.5rem;
+            }
+            .g1-card {
+                background: var(--bg);
+                padding: 1.75rem;
+            }
+            .g1-card h4 {
+                font-size: 0.66rem;
+                font-weight: 700;
+                letter-spacing: 0.2em;
+                text-transform: uppercase;
+                color: var(--tw);
+                margin-bottom: 0.6rem;
+            }
+            .g1-a2a {
+                font-size: 0.74rem;
+                font-weight: 300;
+                color: var(--tm);
+                line-height: 1.75;
+                font-style: italic;
+                padding-bottom: 0.75rem;
+                margin-bottom: 0.75rem;
+                border-bottom: 1px solid var(--br);
+            }
+            .g1-does {
+                font-size: 0.78rem;
+                font-weight: 300;
+                color: var(--tx);
+                line-height: 1.8;
+            }
+            .g1-refuse {
+                margin-top: 0.9rem;
+                font-size: 0.68rem;
+                color: var(--rd);
+                line-height: 1.7;
+            }
+            .g1-refuse code {
+                background: var(--rd-d);
+                color: var(--rd);
+                padding: 0.1rem 0.35rem;
+                border-radius: 4px;
+                font-size: 0.66rem;
+            }
+            .g1-unbuilt {
+                margin-top: 0.9rem;
+                font-size: 0.68rem;
+                color: var(--am);
+                line-height: 1.7;
+            }
+            .g1-proof {
+                margin-top: 2.5rem;
+                border: 1px solid var(--br);
+                border-radius: 12px;
+                background: var(--s1);
+                overflow: hidden;
+            }
+            .g1-proof-h {
+                padding: 1rem 1.5rem;
+                border-bottom: 1px solid var(--br);
+                display: flex;
+                flex-wrap: wrap;
+                gap: 0.75rem;
+                align-items: center;
+                justify-content: space-between;
+            }
+            .g1-proof-h strong {
+                font-size: 0.8rem;
+                font-weight: 600;
+            }
+            .g1-rung {
+                font-size: 0.6rem;
+                letter-spacing: 0.15em;
+                text-transform: uppercase;
+                padding: 0.25rem 0.55rem;
+                border-radius: 4px;
+                background: var(--em-d);
+                color: var(--em);
+                white-space: nowrap;
+            }
+            .g1-rung.spec {
+                background: var(--am-d);
+                color: var(--am);
+            }
+            .g1-proof-b {
+                padding: 1.5rem;
+            }
+            .g1-cmd {
+                background: var(--bg);
+                border: 1px solid var(--br);
+                border-radius: 8px;
+                padding: 0.9rem 1rem;
+                font-size: 0.68rem;
+                line-height: 1.9;
+                color: var(--tm);
+                overflow-x: auto;
+                white-space: pre;
+            }
+            .g1-cmd .p {
+                color: var(--em);
+            }
+            .g1-cmd .o {
+                color: var(--sl);
+            }
+            .g1-proof-b p {
+                font-size: 0.76rem;
+                font-weight: 300;
+                color: var(--tm);
+                line-height: 1.8;
+                margin-top: 1rem;
+            }
+            .g1-proof-b p strong {
+                color: var(--tx);
+                font-weight: 600;
+            }
+            @media (max-width: 760px) {
+                .g1-grid {
+                    grid-template-columns: 1fr;
+                }
+            }
+            /* Footer link row scrolled the whole document sideways at 390px.
+               Measured 412px against a 390px viewport, at HEAD, before the
+               section above existed. Additive rule, no existing rule edited. */
+            .ft-right {
+                flex-wrap: wrap;
+            }
         </style>
         <script type="module" src="/amp-nav.js"></script>
     </head>
@@ -1234,6 +1396,193 @@
                             delegation grant, override — is logged with actor,
                             timestamp, previous value, and new value. Logs are
                             immutable.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- G1: THE MEMBERSHIP RULE -->
+        <section class="g1-section" id="membership">
+            <div class="wrap">
+                <p class="section-label">The Gap</p>
+                <h2 class="section-title">
+                    A2A can already delegate. That is not the missing part.
+                </h2>
+                <p class="section-sub">
+                    The interoperability protocols carry a delegation perfectly
+                    well. What none of them carries is the rule that says whether
+                    the delegation was allowed in the first place.
+                </p>
+
+                <p class="g1-q">Was this delegation actually <em>permitted?</em></p>
+
+                <div class="g1-src">
+                    <strong>Source.</strong> Richard Kang and Yudho Diponegoro,
+                    <em
+                        >Governance Gaps in Agent Interoperability Protocols:
+                        What MCP, A2A, and ACP Cannot Express</em
+                    >,
+                    <a href="https://arxiv.org/abs/2606.31498"
+                        >arXiv:2606.31498v1</a
+                    >, 30 June 2026.
+                    <span class="warn"
+                        >A preprint, not peer-reviewed</span
+                    >. It states plainly that &ldquo;A2A supports task delegation
+                    and message exchange&rdquo; — so <em>delegation is missing</em>
+                    is not a claim available to this page, and any earlier reading
+                    of it that way was wrong. What the paper scores is
+                    <strong>G1 Membership</strong>: &ldquo;admission, invitation,
+                    removal, and role assignment.&rdquo; A2A is graded
+                    <em>Partial</em> there and 1/12 overall, because &ldquo;an
+                    agent &lsquo;exists&rsquo; by publishing an Agent Card; there
+                    is no concept of community membership distinct from
+                    existence.&rdquo; Those four words are the four cards below.
+                </div>
+
+                <div class="g1-grid">
+                    <div class="g1-card">
+                        <h4>Admission</h4>
+                        <div class="g1-a2a">
+                            A2A: an Agent Card declares what an agent can do.
+                            Nothing declares what it may join.
+                        </div>
+                        <div class="g1-does">
+                            A policy names an explicit
+                            <code>allow_actions</code> list and an optional
+                            <code>agents</code> allowlist. Nothing is implicitly
+                            granted: an unset key is denied, not inherited as
+                            true.
+                        </div>
+                        <div class="g1-refuse">
+                            Refuses: <code>:agent_not_allowed</code> ·
+                            <code>:not_in_allowlist</code>
+                        </div>
+                    </div>
+
+                    <div class="g1-card">
+                        <h4>Invitation</h4>
+                        <div class="g1-a2a">
+                            A2A: no invitation primitive. The paper's finding,
+                            and it holds against this kernel too.
+                        </div>
+                        <div class="g1-does">
+                            The kernel has none either. A policy is written by
+                            whoever can reach the policy store; there is no
+                            protocol for one principal to admit another, and no
+                            endorsement chain of the kind the paper's own worked
+                            example uses.
+                        </div>
+                        <div class="g1-unbuilt">
+                            Not built. Named here rather than implied by the
+                            other three.
+                        </div>
+                    </div>
+
+                    <div class="g1-card">
+                        <h4>Removal</h4>
+                        <div class="g1-a2a">
+                            A2A: no removal primitive. An Agent Card that exists
+                            keeps existing.
+                        </div>
+                        <div class="g1-does">
+                            Two mechanisms, and only one of them is revocation. A
+                            <code>deny_actions</code> entry beats the allowlist on
+                            conflict. Separately, every issued authorization
+                            carries a TTL capped by the policy —
+                            <code>max_ttl_seconds</code>, 600 by default — so
+                            authority lapses on its own.
+                        </div>
+                        <div class="g1-refuse">
+                            Refuses: <code>:denied_by_policy</code> ·
+                            <code>:expired</code>
+                        </div>
+                        <div class="g1-unbuilt">
+                            Expiry is not revocation. A block already issued
+                            stays valid until its TTL runs out.
+                        </div>
+                    </div>
+
+                    <div class="g1-card">
+                        <h4>Role assignment</h4>
+                        <div class="g1-a2a">
+                            A2A: capabilities are declared; governance roles are
+                            not modelled at all.
+                        </div>
+                        <div class="g1-does">
+                            A policy can carry
+                            <code>require_approval_by</code>, and the MCP
+                            <code>get_policy</code> tool reports it.
+                        </div>
+                        <div class="g1-unbuilt">
+                            <strong>And nothing enforces it.</strong> The
+                            authorize path checks the denylist, the agent
+                            allowlist and the action allowlist, then signs
+                            whatever <code>approved_by</code> the caller asserted.
+                            The field is stored and published; it is not a check.
+                            This is the honest state of the fourth word, and it is
+                            written down here because a governance kernel that
+                            quietly ignores its own approval field is worse than
+                            one that never offered it.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="g1-proof">
+                    <div class="g1-proof-h">
+                        <strong
+                            >What is actually running, and what you can do to
+                            it</strong
+                        >
+                        <span>
+                            <span class="g1-rung">kernel · live_deployed</span>
+                            <span class="g1-rung spec"
+                                >the page above · spec</span
+                            >
+                        </span>
+                    </div>
+                    <div class="g1-proof-b">
+                        <div class="g1-cmd"><span class="p">$</span> curl -s https://delegatic-mcp.fly.dev/health
+<span class="o">{"status":"ok","version":"0.1.0","service":"delegatic","policies_registered":0}</span></div>
+                        <p>
+                            That is the whole of the running system, and it is the
+                            only thing on this page you can check without reading
+                            a specification. Eight modules, three test files, 42
+                            tests — 25 unit, 3 integration, 14 across the six MCP
+                            tools. FleetPrompt calls
+                            <code>delegatic_authorize</code> to authorize an
+                            install; the kernel answers with a signed, expiring
+                            authorization block or one of five typed refusals.
+                        </p>
+                        <p>
+                            <strong
+                                >The number that matters in that response is
+                                <code>policies_registered: 0</code>.</strong
+                            >
+                            Nobody has written a policy into the deployed store,
+                            which is in-memory ETS and empty on every cold start —
+                            a Postgres-backed store is a future additive release,
+                            not a thing that exists. It runs on Fly today because
+                            that is where it was put, and the standing direction
+                            moves compute off Fly, so treat the hostname as this
+                            month's address rather than the product.
+                        </p>
+                        <p>
+                            The org trees, the effective-policy computation, the
+                            compliance proofs and the dashboard described further
+                            up this page are none of them written.
+                            <a
+                                href="https://github.com/c-u-l8er/delegatic.com/blob/main/docs/spec/README.md"
+                                >Read the spec</a
+                            >
+                            and
+                            <a
+                                href="https://github.com/c-u-l8er/delegatic.com/issues"
+                                >open an issue</a
+                            >
+                            where it is wrong — an unenforced field we have not
+                            already named is the most valuable thing you could
+                            hand back.
                         </p>
                     </div>
                 </div>
