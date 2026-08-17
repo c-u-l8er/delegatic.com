@@ -406,7 +406,33 @@ T("the LIMIT row names something the evidence does NOT establish",
     T("the animation stops when the tab is hidden", CODE.includes("document.hidden"));
     T("the animation caps its frame rate", /ts - last < \d+/.test(CODE));
     T("the animation paints a first frame before any loop starts", /\bdraw\(0\)/.test(CODE));
-    T("the animation stays cheap enough for a phone", ANIM.length < 9000, `${ANIM.length.toLocaleString()} bytes`);
+    /* EVERY CHECK ABOVE READS THIS FILE AS TEXT. None of them asks whether it
+       is JavaScript. A missing brace ships an animation that throws on load —
+       the page is unharmed (§8 guarantees that) but the hero is silently empty,
+       and every check here still passes because the substrings they look for
+       are all still present. new Function() COMPILES without invoking: a syntax
+       error throws here, and nothing in the body runs. */
+    for (const [name, body] of [["identity.js", ANIM], ["say.js", read("./say.js")]]) {
+        let parsed = true, why = "parses";
+        try { new Function(body); } catch (e) { parsed = false; why = e.message; }
+        T(`${name} is syntactically valid JavaScript`, parsed, why);
+    }
+
+    /* WHAT "CHEAP" MEASURES. This was `ANIM.length < 9000` — the whole file,
+       comments included — copied to five surfaces from the reference gate.
+       It is the wrong quantity: §8.4's "cheap" is about what RUNS on a phone,
+       and 46% of the bytes here are the prose SHELL.md's own r-series asks
+       every lane to write down. Ruled by Travis on deliberatic 2026-08-17 and
+       applied here the same day, for the same reason: the payload and the
+       download are bounded separately. Both still bite — 5,054 / 9,687.
+
+       agentromatic, fleetprompt and specprompt STILL CARRY THE SINGLE CAP and
+       have the headroom for it. Recorded so the divergence is visible rather
+       than discovered. */
+    T("the animation's executable payload stays cheap enough for a phone",
+        CODE.length < 9000, `${CODE.length.toLocaleString()} chars of code`);
+    T("the animation stays a small download",
+        ANIM.length < 14000, `${ANIM.length.toLocaleString()} chars including comments`);
 }
 
 /* ==========================================================================

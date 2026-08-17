@@ -90,7 +90,12 @@ img,canvas,svg{max-width:100%}
   mask-image:radial-gradient(circle at 56% 50%,#000 46%,transparent 76%)}
 .ident svg{display:block;width:100%;height:100%}
 @media(min-width:861px){.hero .lede{max-width:min(52ch,56%)}}
-@media(max-width:860px){.ident{right:-30%;width:min(86vw,430px);opacity:.24}}
+/* -40px, not -30%: a percentage offset is relative to the hero, so at ~700px
+   it hung ~190px of a 430px canvas past the section's overflow:hidden and cut
+   the drawing in half. SHELL.md r13: measure animRight - heroRight at every
+   width; a sparse animation may just be a cropped one. Found and fixed on
+   deliberatic the same day — this surface had the identical rule. */
+@media(max-width:860px){.ident{right:-40px;width:min(86vw,430px);opacity:.24}}
 
 /* --- sections --- */
 section{padding:56px 0;border-top:1px solid var(--line)}
@@ -289,3 +294,9 @@ footer .links{display:flex;flex-wrap:wrap;gap:20px;min-width:0}
 .id-node rect.no{stroke:var(--warn);fill:rgba(245,196,81,.1)}
 .id-tok circle{fill:var(--acc)}
 .id-tok circle.no{fill:var(--warn)}
+/* The request laid over the tree, and the part of it no ancestor ever held.
+   The overhang takes --warn on its own because it is the whole answer to the
+   h1: everything else on screen is context for that sliver. */
+.id-ask rect{fill:var(--acc);fill-opacity:.07;stroke:var(--acc-line);stroke-width:1}
+.id-ask rect.hot{fill-opacity:.13;stroke:var(--acc)}
+.id-over rect{fill:var(--warn);fill-opacity:.34}
