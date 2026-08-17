@@ -1,0 +1,133 @@
+{
+  "schema": "computedriven-surface-v1",
+  "_comment": "The frozen record this surface is generated from. build-site.mjs reads it and emits index.html; launch-gate.mjs reads the EMITTED index.html and refuses to publish when the artifact and this file disagree. Nothing on the page may state a rung, a status or a scope that is not here.",
+
+  "shell_revision": "shell-r4",
+  "_shell_revision_comment": "The revision of agents/SHELL.md this surface was built against. SHELL.md's own revision block asks for it, and the reason is good: every lane so far has found a defect in that document, and a surface that records which revision it was built against is the only way to know later which pages carry a fix and which predate it. r4 = tier-4 band variant, --fg3 at .55, §8 identifying animation required. NOTE: the revision block was added to SHELL.md while this lane was running; the document read at the start of the run already contained all of r2, r3 and r4, so this surface is r4 in substance as well as in label.",
+
+  "version": "0.3.0",
+  "origin": "https://delegatic.com",
+  "repo": "https://github.com/c-u-l8er/delegatic.com",
+  "surface": "Delegatic",
+  "parent": "ComputeDriven",
+  "layer": "authorization",
+  "_layer_comment": "amp-nav (ampersand-nav/src/amp-nav.js HEAD d0a6415) records `delegatic: { name: \"Delegatic\", place: 2, layer: \"authorization\", rung: \"live_deployed\" }`. The word is amp-nav's, not this page's. This repository's own CLAUDE.md calls it the 'governance layer'; the band prints what the nav records, because the band is designed to pair with the nav. The divergence is reported, not resolved here.",
+
+  "nav_tier": 2,
+  "_nav_tier_comment": "Place 2 is a product with a defensible rung, and its band form is the layer sentence. This is the ONE of the three governance siblings that is entitled to it — deliberatic and agentromatic are place 3. SHELL.md §1: check the tier before you write the band. Checked 2026-08-16.",
+  "spec_url": "https://docs.ampersandboxdesign.com/#/delegatic.com/docs/spec/README.md",
+
+  "question": "Was this delegation actually permitted?",
+
+  "surface_rung": "live_deployed",
+  "surface_rung_covers": "the policy kernel answering at delegatic-mcp.fly.dev/health, and nothing else — its policy store is empty, and the org trees, the effective-policy computation and the compliance proofs described below are specified rather than written",
+  "rung_witness": "deployed_health_check",
+  "_rung_witness_comment": "Which gate establishes the surface rung. launch-gate.mjs refuses if THAT gate is not approved. GPSCoord's rule — any pending gate keeps the surface below live_deployed — is too blunt: independent_use is pending forever by construction, so under that rule no surface could ever reach a deployed rung.",
+  "verified_at": "2026-08-16",
+
+  "status": {
+    "statement": "A policy kernel is deployed and answers. Eight modules, three test files, forty-two tests, six MCP tools, five typed refusal reasons. FleetPrompt calls delegatic_authorize to authorize an install and the kernel answers with a signed, expiring authorization block or a typed refusal. The governance platform described on this page — org trees, policy cascade, compliance proofs, the dashboard — is none of it written.",
+    "source": "curl -s https://delegatic-mcp.fly.dev/health, run 2026-08-16; and the module, test and tool counts derived from the delegatic/ tree at commit 06dfa88 by counting files and test macros, not by copying a planning document.",
+    "limit": "This establishes that a service answers and that a test suite passes. It does not establish that any policy has ever been enforced in anger: policies_registered is 0, the store is in-memory ETS and empty on every cold start, and require_approval_by is stored and published and checked by nothing. It says nothing at all about the org hierarchy, the policy cascade or the audit trail described further down, none of which exist."
+  },
+
+  "advance": {
+    "next_rung": "external",
+    "requires": "Someone who is not us registering a policy in a Delegatic kernel and having it refuse something. That is the one rung nobody here can award themselves. The nearer, cheaper move is to make require_approval_by a check rather than a field — which would close the fourth of G1's four words instead of naming it."
+  },
+
+  "health": {
+    "url": "https://delegatic-mcp.fly.dev/health",
+    "response": "{\"status\":\"ok\",\"version\":\"0.1.0\",\"service\":\"delegatic\",\"policies_registered\":0}",
+    "checked": "2026-08-16",
+    "_comment": "Printed on the page exactly as received. policies_registered: 0 is the honest headline and it stays. Fly is where the kernel was put; the standing direction moves compute off Fly, so the hostname is this month's address rather than the product."
+  },
+
+  "kernel": {
+    "source": "ProjectAmp2/delegatic",
+    "commit": "06dfa88",
+    "modules": 8,
+    "test_files": 3,
+    "tests": 42,
+    "tests_breakdown": "25 unit + 3 integration + 14 across the six MCP tools",
+    "mcp_tools": 6,
+    "refusals": 5,
+    "max_ttl_default": 600,
+    "_comment": "Derived by counting the tree at that commit — find lib -name '*.ex' | wc -l, grep -cE '^\\s*test \"' per test file, the component(...) lines in mcp/server.ex, and the reason list documented on Delegatic.authorize/1. Re-derive; do not copy."
+  },
+
+  "citation": {
+    "authors": "Richard Kang and Yudho Diponegoro",
+    "title": "Governance Gaps in Agent Interoperability Protocols: What MCP, A2A, and ACP Cannot Express",
+    "id": "arXiv:2606.31498v1",
+    "url": "https://arxiv.org/abs/2606.31498",
+    "date": "30 June 2026",
+    "peer_reviewed": false,
+    "scoring": "2 points for Supported, 1 for Partial, 0 for Absent, over six dimensions — 12 possible.",
+    "scores": [
+      "MCP v1.1 — 1/12",
+      "A2A v1.0.1 — 1/12",
+      "ACP — 2/12",
+      "ANP — 0/12",
+      "ERC-8004 — 2/12"
+    ]
+  },
+
+  "contact": {
+    "kind": "github_issues",
+    "url": "https://github.com/c-u-l8er/delegatic.com/issues",
+    "_comment": "This page carried `mailto:hello@ampersandboxdesign.com` in its footer until this revision — Cloudflare was obfuscating it at the edge, which is how the served page measured +159 bytes against the local file. Removed: no mailto:, Travis's call 2026-08-11. No Formspree endpoint exists for this domain and borrowing toolboxhvac's needs a ruling, so corrections go to GitHub issues. [TRAVIS]"
+  },
+
+  "gates": {
+    "_comment": "A gate may not read approved without its evidence, reviewer and date fields, and launch-gate.mjs enforces that.",
+    "deployed_health_check": {
+      "label": "The kernel answers on its deployed address",
+      "status": "approved",
+      "description": "The health endpoint returns the exact JSON printed on this page, including policies_registered: 0.",
+      "evidence": "curl -s https://delegatic-mcp.fly.dev/health → {\"status\":\"ok\",\"version\":\"0.1.0\",\"service\":\"delegatic\",\"policies_registered\":0} — HTTP 200.",
+      "reviewer": "lane govtrio, run from this machine",
+      "date": "2026-08-16"
+    },
+    "counts_derived_from_the_tree": {
+      "label": "Every count printed about the kernel was re-derived, not copied",
+      "status": "approved",
+      "description": "Modules, test files, tests, MCP tools and refusal reasons were counted in ProjectAmp2/delegatic at commit 06dfa88.",
+      "evidence": "find lib -name '*.ex' → 8; find test -name '*_test.exs' → 3; grep -cE '^\\\\s*test \"' → 25 + 14 + 3 = 42; component(...) in lib/delegatic/mcp/server.ex → 6; the reason list on Delegatic.authorize/1 → 5.",
+      "reviewer": "lane govtrio",
+      "date": "2026-08-16"
+    },
+    "approval_field_enforced": {
+      "label": "require_approval_by is checked, not merely stored",
+      "status": "pending",
+      "description": "The authorize path checks the denylist, the agent allowlist and the action allowlist, then signs whatever approved_by the caller asserted. The field is published by the MCP get_policy tool and enforced by nothing. Named on the page rather than implied away.",
+      "evidence": null,
+      "reviewer": null,
+      "date": null
+    },
+    "durable_policy_store": {
+      "label": "A policy survives a restart",
+      "status": "pending",
+      "description": "The store is in-memory ETS and empty on every cold start. A Postgres-backed store is a future additive release, not a thing that exists.",
+      "evidence": null,
+      "reviewer": null,
+      "date": null
+    },
+    "governance_platform": {
+      "label": "The org trees, the policy cascade and the compliance proofs exist",
+      "status": "pending",
+      "description": "They are specified. Nothing on this page should be read as saying otherwise, and the rung's covers span bounds it explicitly.",
+      "evidence": null,
+      "reviewer": null,
+      "date": null
+    },
+    "independent_use": {
+      "label": "Someone who is not us had a Delegatic policy refuse something",
+      "status": "pending",
+      "description": "The only rung nobody here can award themselves.",
+      "evidence": null,
+      "reviewer": null,
+      "date": null
+    }
+  }
+}

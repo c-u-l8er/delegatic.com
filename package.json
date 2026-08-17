@@ -1,0 +1,11 @@
+{
+  "name": "delegatic-com",
+  "version": "0.3.0",
+  "private": true,
+  "type": "module",
+  "description": "delegatic.com — generated from a frozen record, with a publication gate that refuses to ship drift. Zero runtime dependencies, zero build dependencies.",
+  "scripts": {
+    "build": "node build-site.mjs",
+    "test:launch": "node build-site.mjs && node launch-gate.mjs"
+  }
+}

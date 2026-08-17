@@ -1,0 +1,196 @@
+<!doctype html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Was this delegation actually permitted? — Delegatic</title>
+<meta name="description" content="A2A can already delegate. What no agent interoperability protocol encodes is the membership rule that says whether the delegation was permitted — admission, invitation, removal, role assignment. Delegatic is a policy kernel that answers on a deployed address with an empty policy store, and a governance platform that is specified and not built. Both are labelled.">
+<meta name="falsifiable-question" content="{{QUESTION}}">
+<link rel="canonical" href="{{ORIGIN}}/">
+<meta name="theme-color" content="#080910">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>{{CSS}}</style>
+<script type="module" src="/amp-nav.js"></script></head><body>
+{{BAND}}
+<amp-nav property="delegatic"></amp-nav>
+
+<div class="wrap">
+
+<div class="top"><a class="logo" href="/">delegatic<span>.com</span></a>
+<nav><a href="#membership">The gap</a><a href="#running">What runs</a><a href="#tree">Containment</a><a href="#invariants">Invariants</a><a href="#do">What you can do</a></nav></div>
+
+<section class="hero">
+<div class="front">
+<div class="eyebrow">The question this site exists to answer</div>
+<h1>Was this delegation actually <em>permitted?</em></h1>
+<p class="lede">The interoperability protocols carry a delegation perfectly well. <b>What none of them carries is the rule that says whether the delegation was allowed in the first place</b> — who may be admitted, who may invite, who may be removed, who holds which role. Delegatic is two things with one name, and the difference matters: <b>a policy kernel that is deployed and answering</b>, with an empty policy store; and <b>a governance platform that is specified and not built.</b> Every claim below says which one it belongs to.</p>
+<div class="btns"><a class="btn" href="#membership">The four words A2A cannot say</a><a class="btn ghost" href="#running">What is actually running</a></div>
+</div>
+<!-- The identifying animation (SHELL.md §8). It comes AFTER the h1 in source
+     order and sits behind it, because the question comes first. It renders no
+     data: identity.js takes no input from this document and writes nothing
+     back into it, and its counts are checked against every number printed
+     here. Remove the script tag and nothing on this page goes missing. -->
+<div class="ident" aria-hidden="true" data-identity-animation>
+<svg viewBox="0 0 320 320" preserveAspectRatio="xMidYMid meet" focusable="false"><g class="id-link"></g><g class="id-node"></g><g class="id-tok"></g></svg>
+</div>
+</section>
+
+<section id="status">
+<div class="eyebrow">Where this stands, before anything else on the page</div>
+<h2>One deployed kernel with nothing in it, and a platform on paper.</h2>
+{{STATUS}}
+</section>
+
+<!-- ══ THE GAP — the section this revision exists to carry forward. Every
+     factual claim below was written in commit f751460 and is preserved. ══ -->
+<section id="membership">
+<div class="eyebrow">The gap</div>
+<h2>A2A can already delegate. That is <em>not</em> the missing part.</h2>
+<p class="lede">The claim this page was drifting toward — that the interoperability protocols cannot delegate — is false, and the source we would have cited for it says the opposite in as many words. It is corrected out loud here rather than quietly avoided. The real gap is narrower, and it is stronger for being narrower.</p>
+
+<p class="q">Was this delegation actually <em>permitted?</em></p>
+
+{{SRC}}
+
+<div class="note"><strong>What the paper actually says about A2A, quoted.</strong> &ldquo;A2A supports task delegation and message exchange.&rdquo; So <em>delegation is missing</em> is not a claim available to this page, and any earlier reading of it that way was wrong. What the paper scores is <strong>G1 Membership</strong> — &ldquo;admission, invitation, removal, and role assignment&rdquo; — where A2A is graded <em>Partial</em> and 1/12 overall, because &ldquo;an agent &lsquo;exists&rsquo; by publishing an Agent Card; there is no concept of community membership distinct from existence.&rdquo; <strong>Those four words are the four cards below.</strong> Two of them are gaps in this kernel too, and they are the point of the section.</div>
+
+<div class="dims">
+
+<div class="dim">
+<div class="dim-h"><b>1</b><span class="n">Admission</span><span class="field partial">A2A: partial</span></div>
+<div>
+<div class="def">A2A: an Agent Card declares what an agent can do. Nothing declares what it may join.</div>
+<div class="has">A policy names an explicit <code>allow_actions</code> list and an optional <code>agents</code> allowlist. Nothing is implicitly granted: an unset key is denied, not inherited as true.</div>
+<div class="cites">refuses: <code>:agent_not_allowed</code> &middot; <code>:not_in_allowlist</code></div>
+</div>
+</div>
+
+<div class="dim">
+<div class="dim-h"><b>2</b><span class="n">Invitation</span><span class="field">absent here too</span></div>
+<div>
+<div class="def">A2A: no invitation primitive. The paper's finding, and it holds against this kernel too.</div>
+<div class="has"><span class="gap">The kernel has none either.</span> A policy is written by whoever can reach the policy store; there is no protocol for one principal to admit another, and no endorsement chain of the kind the paper's own worked example uses.</div>
+<div class="cites">not built &middot; named here rather than implied by the other three</div>
+</div>
+</div>
+
+<div class="dim">
+<div class="dim-h"><b>3</b><span class="n">Removal</span><span class="field partial">partly, and only partly</span></div>
+<div>
+<div class="def">A2A: no removal primitive. An Agent Card that exists keeps existing.</div>
+<div class="has">Two mechanisms, and only one of them is revocation. A <code>deny_actions</code> entry beats the allowlist on conflict. Separately, every issued authorization carries a TTL capped by the policy — <code>max_ttl_seconds</code>, 600 by default — so authority lapses on its own. <span class="gap">Expiry is not revocation:</span> a block already issued stays valid until its TTL runs out.</div>
+<div class="cites">refuses: <code>:denied_by_policy</code> &middot; <code>:expired</code></div>
+</div>
+</div>
+
+<div class="dim">
+<div class="dim-h"><b>4</b><span class="n">Role assignment</span><span class="field">stored, and unenforced</span></div>
+<div>
+<div class="def">A2A: capabilities are declared; governance roles are not modelled at all.</div>
+<div class="has">A policy can carry <code>require_approval_by</code>, and the MCP <code>get_policy</code> tool reports it. <span class="gap">And nothing enforces it.</span> The authorize path checks the denylist, the agent allowlist and the action allowlist, then signs whatever <code>approved_by</code> the caller asserted. The field is stored and published; it is not a check. This is the honest state of the fourth word, and it is written down here because <b>a governance kernel that quietly ignores its own approval field is worse than one that never offered it.</b></div>
+<div class="cites">gate <code>approval_field_enforced</code> &middot; pending, and it is the nearest real advance available to this surface</div>
+</div>
+</div>
+
+</div>
+</section>
+
+<section id="running">
+<div class="eyebrow">What is actually running</div>
+<h2>One command, and the number in the answer is the point.</h2>
+<p class="lede">This is the only thing on the page you can check without reading a specification. It is printed exactly as it came back.</p>
+{{TERM}}
+<p>Eight modules, three test files, forty-two tests — twenty-five unit, three integration, fourteen across the six MCP tools. FleetPrompt calls <code>delegatic_authorize</code> to authorize an install; the kernel answers with a signed, expiring authorization block, or with one of five typed refusals. <b>Every one of those counts was derived by counting the tree at the commit named in the status block above</b>, not copied out of a planning document.</p>
+<div class="note"><strong>The number that matters in that response is <code>policies_registered: 0</code>.</strong> Nobody has written a policy into the deployed store, which is in-memory ETS and empty on every cold start — a Postgres-backed store is a future additive release, not a thing that exists. It runs on Fly today because that is where it was put, and the standing direction moves compute off Fly, so <strong>treat the hostname as this month's address rather than the product.</strong></div>
+</section>
+
+<section id="tree">
+<div class="eyebrow">The specified model &mdash; none of this is implemented</div>
+<h2>Structure is the authorization model.</h2>
+<p class="lede">Everything in this section and the two below it is <b>a design</b>. The containment tree, the cascade, the invariants: specified in <code>docs/spec/README.md</code> and written nowhere else. The worked example is an illustration, not a screenshot of a running system, and it is drawn as a table for that reason.</p>
+<div class="layers">
+<div class="layer cur"><div class="k"><b>Acme Corp</b><span>root org</span></div><div><p><code>maxAgents: 500</code> &middot; <code>telespaceAttach: true</code> &middot; <code>externalAPI: true</code> — the owner sets the outer boundary. Everything below can move inward from here and nowhere else.</p></div></div>
+<div class="layer"><div class="k"><b>Engineering</b><span>child org</span></div><div><p><code>maxAgents: 200</code>, tightened. <code>telespaceAttach</code> and <code>externalAPI</code> inherited. A child that states nothing states its parent.</p></div></div>
+<div class="layer"><div class="k"><b>ML Team</b><span>grandchild</span></div><div><p><code>maxAgents: 50</code> and <code>externalAPI: false</code>, both tightened. Two levels down, still strictly inside both ancestors.</p></div></div>
+<div class="layer"><div class="k"><b>Intern Team</b><span>grandchild &middot; restricted</span></div><div><p><code>maxAgents: 5</code> &middot; <code>externalAPI: false</code> &middot; <code>telespaceAttach: false</code>. <b>An attempt to set <code>externalAPI: true</code> here is rejected</b> — it would widen a parent restriction, and that is a privilege escalation whichever direction it is written from.</p><div class="ref">spec §3.5 effective policy computation &middot; ADR-0002 &mdash; children may only tighten, never widen; escalation impossible by construction rather than by review</div></div></div>
+</div>
+<div class="two">
+<div><h3>What Delegatic is</h3><ul>
+<li><b>A governance plane</b> — who may do what, enforced</li>
+<li><b>An org hierarchy</b> — containment trees with a policy cascade</li>
+<li><b>Authority delegation</b> — structured permission grants</li>
+<li><b>Audit and compliance</b> — immutable decision records</li>
+<li><b>Human-defined structure</b> — you design the rules</li>
+<li><b>Orchestration</b> — defining workflows and routing policies</li>
+</ul></div>
+<div><h3>What Delegatic is not</h3><ul>
+<li><b>Task execution</b> — that is AgenTroMatic</li>
+<li><b>Agent building</b> — that is Agentelic</li>
+<li><b>A skill marketplace</b> — that is FleetPrompt</li>
+<li><b>Runtime hosting</b> — that is WebHost.Systems</li>
+<li><b>Agent self-organisation</b> — that is AgenTroMatic</li>
+<li><b>Memory or learning</b> — that is Graphonomous</li>
+</ul></div>
+</div>
+</section>
+
+<section id="concepts">
+<div class="eyebrow">The primitives, as specified</div>
+<h2>Six ideas, and the fifth is why the data layer stays small.</h2>
+<div class="grid">
+<div><h3>Containment trees</h3><p>Organisations nest in a strict tree — no cycles, enforced at write time. Each org has at most one parent. The structure <b>is</b> the authorization model rather than an index over it.</p><div class="needs"><b>Specified in:</b> §3.1 organizations &middot; §4 cycle detection</div></div>
+<div><h3>Policy inheritance</h3><p>Policies cascade down the tree. Children can tighten but never widen a parent restriction. Monotonic inheritance makes privilege escalation impossible by design rather than by audit.</p><div class="needs"><b>Specified in:</b> §3.4 policies &middot; §3.5 effective policy</div></div>
+<div><h3>Deny by default</h3><p>No implicit permissions. Every capability must be granted explicitly at some level of the tree. Unset is denied. No confused-deputy attacks.</p><div class="needs"><b>Specified in:</b> §3.4 policies. <b>Running:</b> this one is real in the deployed kernel.</div></div>
+<div><h3>Append-only audit</h3><p>Every policy mutation, every delegation decision, every access attempt is logged immutably. The audit trail <b>is</b> the compliance artifact; there is no second document to keep in step with it.</p><div class="needs"><b>Specified in:</b> §3.6 audit events</div></div>
+<div><h3>References, not copies</h3><p>Delegatic stores org IDs, telespace IDs, policy rules and GoalGraph <code>goal_id</code> references. It never copies agent configs, messages, execution logs or goal content — only opaque IDs. Zero data duplication.</p><div class="needs"><b>Specified in:</b> §2.1 GoalGraph integration &middot; §3.2 goal attachments</div></div>
+<div><h3>Human in the loop</h3><p>Escalation paths for low-confidence decisions, and an override on any agent decision with full audit logging. Humans set the structure; agents operate inside it.</p><div class="needs"><b>Specified in:</b> §3.3 memberships &middot; §5 dashboard</div></div>
+</div>
+</section>
+
+<section id="invariants">
+<div class="eyebrow">The security model, as specified</div>
+<h2>Four invariants, and the honest note about all four.</h2>
+<p class="lede">These are properties the specification says hold at every level of the containment tree, verified on every write. <b>Nothing verifies them today</b>, because the containment tree is not implemented — the deployed kernel is flat: one policy, one action type, one agent filter. These are stated as design, and the gate on this page refuses any wording that would let them read as behaviour.</p>
+<div class="steps">
+<div class="step"><div class="t">1</div><div><h3>No cycles in the containment tree</h3><p>Every org has at most one parent. Cycles are rejected at write time with a traversal check. Maximum depth 50, maximum 10,000 nodes; an attempt to create a cycle returns <code>CONFLICT</code>. <span class="cites">spec §4 &middot; ADR-0001</span></p></div></div>
+<div class="step"><div class="t">2</div><div><h3>Monotonic policy inheritance</h3><p>A child's effective policy is always at least as tight as its parent's. Attempting to widen — setting <code>externalAPI: true</code> where the parent says <code>false</code> — is rejected as a privilege escalation. Delegatic governs authorization boundaries; the &kappa; invariant in Graphonomous determines where deliberation is structurally meaningful <em>within</em> those boundaries. <span class="cites">spec §3.5 &middot; ADR-0002</span></p></div></div>
+<div class="step"><div class="t">3</div><div><h3>Deny by default</h3><p>No capability is implicitly granted. If a policy key is unset at any level, the effective value is <code>denied</code>. Explicit grants are required at every boundary. <b>This one is real in the deployed kernel</b> — it is the rule behind <code>:not_in_allowlist</code>. <span class="cites">spec §3.4</span></p></div></div>
+<div class="step"><div class="t">4</div><div><h3>Append-only audit</h3><p>Every mutation — policy change, org creation, delegation grant, override — logged with actor, timestamp, previous value and new value. Logs are immutable. <span class="cites">spec §3.6</span></p></div></div>
+</div>
+</section>
+
+<section id="stack">
+<div class="eyebrow">Where it sits</div>
+<h2>The boundary every other product operates inside.</h2>
+<p class="lede">Delegatic defines the boundary; the rest of the stack works within it. <b>The rungs differ wildly and the list says so</b> — a stack diagram that draws eight products as equal peers is drawing a wish, and this one is a list precisely so it cannot.</p>
+<div class="layers">
+<div class="layer cur"><div class="k"><b>Delegatic</b><span>authorization &middot; you are here</span></div><div><p>Org hierarchy, policy inheritance, authority delegation. The kernel is deployed with an empty store; the platform is specified.</p></div></div>
+<div class="layer"><div class="k"><b>SpecPrompt</b><span>specifications</span></div><div><p>Agent capability contracts and acceptance criteria.</p></div></div>
+<div class="layer"><div class="k"><b>Agentelic</b><span>collaboration</span></div><div><p>Telespaces, rooms, and agent team communication.</p></div></div>
+<div class="layer"><div class="k"><b>AgenTroMatic</b><span>allocation</span></div><div><p>Bidding, debate and quorum over contested work. <a href="https://agentromatic.com">A specification</a>, and its page says so.</p></div></div>
+<div class="layer"><div class="k"><b>Deliberatic</b><span>decisions</span></div><div><p>Argumentation-based consensus. <a href="https://deliberatic.com">A specification</a>, and its page says so.</p></div></div>
+<div class="layer"><div class="k"><b>FleetPrompt</b><span>skills</span></div><div><p>Agent skill marketplace and component registry. It is the one caller of <code>delegatic_authorize</code> today.</p></div></div>
+<div class="layer"><div class="k"><b>Graphonomous</b><span>learning</span></div><div><p>Continual learning engine — the memory the rest of the stack reads from.</p></div></div>
+<div class="layer"><div class="k"><b>WebHost.Systems</b><span>hosting</span></div><div><p>Managed infrastructure. Its own page is being rewritten; do not take anything here as a claim about it.</p></div></div>
+</div>
+</section>
+
+<section id="do">
+<div class="eyebrow">What you can do here</div>
+<h2>Two rungs, two sets of verbs, and neither borrows the other's.</h2>
+<p class="lede">The kernel is <code>live_deployed</code> and there is exactly one thing to do with it. The page above it is <code>spec</code>, and a specification has nothing to run. <b>The publication gate refuses to emit a call to action the rung has not earned</b>, which is why there is no button here inviting you to try a governance platform that does not exist.</p>
+{{CTA}}
+
+<div class="retract">
+<h3>Retraction &mdash; what used to stand here</h3>
+<p>&ldquo;Enterprise governance. Open-source core. Launching 2026.&rdquo; stood here, above an email box wired to nothing — no form, no handler, no destination. It is August. <b>Both are gone rather than moved to a later year.</b> A footer <code>mailto:</code> went with them in this revision: Cloudflare was rewriting it at the edge for obfuscation, which is the entire reason the served page measured 159 bytes larger than the file in this repository.</p>
+</div>
+</section>
+
+</div>
+
+<footer><div class="in">
+<div>&copy; 2026 Delegatic &middot; the <b>{{LAYER}}</b> layer of <b>{{PARENT}}</b> &middot; <span class="stamp">{{STAMP}}</span></div>
+<div class="links"><a href="{{REPO}}">Source</a><a href="{{SPEC_URL}}">Specification</a><a href="{{ISSUES}}">Corrections</a><a href="https://deliberatic.com">deliberatic.com</a><a href="https://agentromatic.com">agentromatic.com</a><a href="https://ampersandboxdesign.com">ampersandboxdesign.com</a></div>
+</div></footer>
+
+<script src="/identity.js" defer></script>
+</body></html>

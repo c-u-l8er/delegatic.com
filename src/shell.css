@@ -1,0 +1,243 @@
+/* ==========================================================================
+   The ComputeDriven page shell. Everything between TOKENS-START and TOKENS-END
+   is this surface's own character. Everything after TOKENS-END is shared
+   structure — the base is copied from ~/Projects/GPSCoord/src/shell.css
+   unchanged, and the block marked GOVERNANCE COMPONENTS is shared verbatim by
+   the three governance siblings (deliberatic, delegatic, agentromatic).
+   Documented in ProjectAmp2/agents/SHELL.md.
+   ========================================================================== */
+/* TOKENS-START — Delegatic: sanction indigo on basalt */
+:root{
+--ink:#080910;--ink2:#0e1018;--ink3:#161a26;           /* page · surface · raised */
+--line:rgba(255,255,255,.07);--line2:rgba(255,255,255,.14);
+/* Measured, not guessed. fg3 .56 = 5.35:1 on the lightest surface; the .34 this
+   shell shipped with was 2.78:1, and a caveat nobody can read is not a caveat.
+   launch-gate.mjs recomputes every one of these and refuses below 4.5:1. */
+--fg:#e9eaf2;--fg2:rgba(233,234,242,.66);--fg3:rgba(233,234,242,.56);
+--acc:#9d8bff;--acc-soft:rgba(157,139,255,.1);--acc-line:rgba(157,139,255,.32);
+--acc-ink:#0f0a2a;                                     /* label inside a filled button */
+--data:#5ad1c8;--data-soft:rgba(90,209,200,.1);--warn:#f5c451;
+--display:"Archivo",system-ui,-apple-system,sans-serif;
+--ui:"Inter",system-ui,-apple-system,sans-serif;
+--mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+--r:2px;--rl:6px
+}
+/* TOKENS-END */
+
+:root{--wrap:1080px;--xs:.6875rem;--sm:.8125rem;--md:1.0625rem;--lg:1.25rem;
+--h2:clamp(1.7rem,4vw,2.5rem);--h1:clamp(2.3rem,6.4vw,4.1rem)}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--ink);color:var(--fg);font:.9375rem/1.6 var(--ui);overflow-x:hidden;-webkit-font-smoothing:antialiased}
+a{color:var(--acc)}
+h1,h2,h3{margin:0}
+img,canvas,svg{max-width:100%}
+:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+.wrap{max-width:var(--wrap);margin:0 auto;padding:0 22px}
+
+/* --- placement band: shared, identical on every surface ---
+   amp-nav records this surface's place; the band may only claim what that
+   place permits. .covers is 11px and load-bearing — it is the span that keeps
+   the rung chip honest — so it takes --fg2, not --fg3. SHELL.md §0/§1. */
+.band{display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px;padding:11px 22px;background:var(--ink2);border-bottom:1px solid var(--line);font-size:var(--xs)}
+.band .where{color:var(--fg2);text-transform:uppercase;letter-spacing:.05em}
+.band .where b{color:var(--fg);font-weight:600}
+.band .covers{color:var(--fg2);flex:1 1 300px;min-width:0}
+.band .spec-link{color:var(--acc);text-decoration:none;white-space:nowrap;border-bottom:1px solid transparent}
+.band .spec-link:hover{border-bottom-color:var(--acc-line)}
+.rung{display:inline-flex;align-items:center;gap:7px;font-family:var(--mono);font-size:var(--xs);padding:2px 9px;border-radius:999px;border:1px solid var(--line2);color:var(--fg2);white-space:nowrap}
+.rung::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.rung[data-rung=spec]{color:#9aa4b2;border-color:rgba(154,164,178,.35)}
+.rung[data-rung=in_tree]{color:#7aa2f7;border-color:rgba(122,162,247,.35)}
+.rung[data-rung=live_local]{color:var(--data);border-color:rgba(90,209,200,.4);background:var(--data-soft)}
+.rung[data-rung=live_deployed]{color:#4ade80;border-color:rgba(74,222,128,.4)}
+.rung[data-rung=external]{color:#c4a1ff;border-color:rgba(196,161,255,.4)}
+.rung[data-rung="?"]{color:var(--warn);border-color:rgba(245,196,81,.45);border-style:dashed}
+
+/* --- nav --- */
+.top{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:16px 0;border-bottom:1px solid var(--line)}
+.logo{font-family:var(--mono);font-size:var(--md);font-weight:600;letter-spacing:-.03em;color:var(--fg);text-decoration:none;white-space:nowrap}
+.logo span{color:var(--acc)}
+.logo:hover{color:var(--acc)}
+.top nav{display:flex;gap:22px;align-items:center;flex-wrap:wrap}
+.top nav a{color:var(--fg2);text-decoration:none;font-size:var(--sm);font-weight:500;white-space:nowrap}
+.top nav a:hover{color:var(--acc)}
+.btn{display:inline-block;background:var(--acc);color:var(--acc-ink);font-weight:700;border-radius:var(--r);padding:11px 20px;text-decoration:none;font-size:var(--sm)}
+.btn.ghost{background:transparent;color:var(--fg);border:1px solid var(--line2);font-weight:500}
+.btn:hover{filter:brightness(1.08)}
+.btn.ghost:hover{border-color:var(--acc-line);color:var(--acc);filter:none}
+.btns{display:flex;flex-wrap:wrap;gap:12px;margin-top:24px}
+
+/* --- the identifying animation (SHELL.md §8) ---
+   The placement machinery is shared; what gets drawn inside is the site's own.
+   The layer is absolutely positioned, so it cannot move or delay the h1; the
+   section clips it, so it can never widen the document at any viewport; and it
+   is masked rather than hard-edged, so the lede stays readable where they
+   overlap. */
+.hero{position:relative;overflow:hidden}
+.hero .front{position:relative;z-index:1}
+.ident{position:absolute;z-index:0;top:0;bottom:0;right:-40px;left:auto;width:min(44vw,430px);pointer-events:none;
+  -webkit-mask-image:radial-gradient(circle at 56% 50%,#000 46%,transparent 76%);
+  mask-image:radial-gradient(circle at 56% 50%,#000 46%,transparent 76%)}
+.ident svg{display:block;width:100%;height:100%}
+@media(min-width:861px){.hero .lede{max-width:min(52ch,56%)}}
+@media(max-width:860px){.ident{right:-30%;width:min(86vw,430px);opacity:.24}}
+
+/* --- sections --- */
+section{padding:56px 0;border-top:1px solid var(--line)}
+section:first-of-type{border-top:0}
+.eyebrow{font-family:var(--mono);font-size:var(--xs);text-transform:uppercase;letter-spacing:.14em;color:var(--acc);display:flex;align-items:center;gap:11px;margin-bottom:14px}
+.eyebrow::before{content:"";width:20px;height:1px;background:var(--acc);opacity:.6;flex:none}
+h1{font-family:var(--display);font-weight:600;font-size:var(--h1);line-height:1.02;letter-spacing:-.02em;max-width:16ch;text-wrap:balance}
+h1 em{font-style:italic;color:var(--acc)}
+h2{font-family:var(--display);font-weight:600;font-size:var(--h2);line-height:1.08;letter-spacing:-.015em;text-wrap:balance}
+h3{font-size:var(--md);font-weight:600}
+.lede{color:var(--fg2);font-size:var(--md);line-height:1.65;max-width:64ch;margin:14px 0 0}
+p{margin:14px 0 0}
+strong,b{color:var(--fg);font-weight:600}
+
+/* --- cards --- */
+/* Separators are drawn by each cell's own 1px shadow filling the grid gap, NOT
+   by letting a container background show through: the background trick leaves
+   a phantom lit rectangle whenever the last row is short. */
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:1px;background:var(--ink2);border:1px solid var(--line);border-radius:var(--rl);overflow:hidden;margin-top:28px}
+.grid>div{background:var(--ink2);padding:22px;min-width:0;box-shadow:0 0 0 1px var(--line)}
+.grid h3{margin-bottom:8px}
+.grid p{margin:10px 0 0;color:var(--fg2);font-size:var(--sm);line-height:1.6}
+.grid .head{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:10px}
+.grid .head h3{margin:0}
+.needs{margin-top:14px;padding-top:12px;border-top:1px dashed var(--line2);font-family:var(--mono);font-size:var(--xs);color:var(--fg2);line-height:1.6;overflow-wrap:anywhere}
+.needs b{color:var(--fg);font-weight:500}
+.wide{grid-template-columns:repeat(auto-fit,minmax(300px,1fr))}
+.sm{font-size:var(--sm)}
+.mt{margin-top:40px}
+
+/* --- status block: shared, identical on every surface --- */
+.status{border:1px solid var(--line2);border-radius:var(--rl);background:var(--ink2);overflow:hidden;margin-top:26px}
+.status>div{display:grid;grid-template-columns:150px 1fr;gap:16px;padding:15px 20px;border-top:1px solid var(--line);min-width:0}
+.status>div:first-child{border-top:0}
+.status dt{font-family:var(--mono);font-size:var(--xs);text-transform:uppercase;letter-spacing:.1em;color:var(--fg2);margin:0}
+.status dd{margin:0;font-size:var(--sm);color:var(--fg2);line-height:1.6;min-width:0;overflow-wrap:anywhere}
+.status dd strong{color:var(--fg);font-weight:500}
+.status .limit{background:rgba(245,196,81,.05)}
+.status .limit dt{color:var(--warn)}
+
+/* --- claim tag, retraction, code --- */
+.tag{display:inline-block;font-family:var(--mono);font-size:var(--xs);text-transform:uppercase;letter-spacing:.06em;color:var(--warn);background:rgba(245,196,81,.06);border:1px dashed rgba(245,196,81,.35);border-radius:6px;padding:5px 11px;margin-bottom:16px}
+.tag.ok{color:var(--data);border-color:rgba(90,209,200,.35);background:var(--data-soft)}
+.retract{border-left:3px solid var(--warn);background:rgba(245,196,81,.05);border-radius:0 var(--r) var(--r) 0;padding:20px;max-width:76ch;margin-top:26px}
+.retract h3{color:var(--warn);font-size:.9375rem}
+.retract p{font-size:var(--sm);color:var(--fg2);line-height:1.7}
+code{font-family:var(--mono);font-size:.92em;background:rgba(255,255,255,.05);padding:1px 5px;border-radius:4px;overflow-wrap:anywhere}
+
+/* --- CTA, keyed to rung --- */
+.cta{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
+.cta a{display:block;background:var(--ink2);border:1px solid var(--line);border-radius:var(--r);padding:20px;text-decoration:none;transition:border-color .2s,background .2s,transform .2s;min-width:0}
+.cta a:hover{border-color:var(--acc-line);background:var(--acc-soft);transform:translateY(-2px)}
+.cta .verb{display:block;font-family:var(--mono);font-size:var(--xs);font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--acc);margin-bottom:7px}
+.cta .what{display:block;font-size:var(--sm);line-height:1.55;color:var(--fg2)}
+.cta code{color:var(--data);background:none;padding:0}
+.ctagroup+.ctagroup{margin-top:34px}
+
+/* --- footer --- */
+footer{border-top:1px solid var(--line);background:var(--ink2);margin-top:56px}
+footer .in{max-width:var(--wrap);margin:0 auto;padding:26px 22px;display:flex;flex-wrap:wrap;gap:16px;justify-content:space-between;align-items:center;font-size:var(--xs);color:var(--fg2)}
+footer a{color:var(--fg2);text-decoration:none}
+footer a:hover{color:var(--acc)}
+footer .links{display:flex;flex-wrap:wrap;gap:20px;min-width:0}
+.stamp{font-family:var(--mono);color:var(--fg2)}
+
+/* ==========================================================================
+   GOVERNANCE COMPONENTS — shared verbatim by deliberatic · delegatic ·
+   agentromatic. The three siblings all place a specification against the same
+   published gap analysis, so the parts that render a dimension, a citation and
+   a scoreboard are shared rather than re-invented three times.
+   ========================================================================== */
+/* the falsifiable question, §0.8 */
+.q{font-family:var(--display);font-weight:500;font-size:clamp(1.25rem,2.6vw,1.7rem);line-height:1.25;color:var(--fg);border-left:3px solid var(--acc);padding:4px 0 4px 20px;margin-top:26px;max-width:34ch}
+.q em{font-style:italic;color:var(--acc)}
+/* the citation block — a source cited only where it flatters is not a source */
+.src{border:1px solid var(--line);border-left:3px solid var(--line2);border-radius:0 var(--r) var(--r) 0;background:var(--ink2);padding:20px;margin-top:26px;font-size:var(--sm);color:var(--fg2);line-height:1.7;max-width:80ch}
+.src .warn-i{color:var(--warn);font-weight:600}
+.scores{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.scores span{font-family:var(--mono);font-size:var(--xs);color:var(--fg2);background:var(--ink3);border:1px solid var(--line);border-radius:999px;padding:3px 11px;white-space:nowrap}
+/* one governance dimension */
+.dims{margin-top:26px;border:1px solid var(--line);border-radius:var(--rl);overflow:hidden;background:var(--ink2)}
+.dim{display:grid;grid-template-columns:230px 1fr;gap:22px;padding:22px;border-top:1px solid var(--line);min-width:0}
+.dim:first-child{border-top:0}
+.dim-h{min-width:0}
+.dim-h b{display:block;font-family:var(--mono);font-size:var(--md);color:var(--acc);letter-spacing:-.02em}
+.dim-h .n{display:block;font-size:var(--sm);color:var(--fg);font-weight:600;margin-top:2px}
+.field{display:inline-block;font-family:var(--mono);font-size:var(--xs);border-radius:6px;padding:3px 9px;margin-top:10px;border:1px dashed rgba(245,196,81,.35);background:rgba(245,196,81,.06);color:var(--warn)}
+.field.partial{color:var(--fg2);border-style:solid;border-color:var(--line2);background:var(--ink3)}
+.def{font-size:var(--sm);color:var(--fg2);font-style:italic;line-height:1.65;border-left:2px solid var(--line2);padding-left:14px}
+.has{font-size:var(--sm);color:var(--fg2);line-height:1.7;margin-top:12px}
+.has .gap{color:var(--warn);font-weight:600}
+.cites{font-family:var(--mono);font-size:var(--xs);color:var(--fg2);margin-top:12px;padding-top:10px;border-top:1px dashed var(--line2);overflow-wrap:anywhere}
+/* a block that states what the evidence does NOT establish */
+.note{border:1px solid var(--line2);border-radius:var(--rl);background:var(--ink3);padding:22px;margin-top:26px;font-size:var(--sm);color:var(--fg2);line-height:1.75;max-width:80ch}
+.note strong{color:var(--fg)}
+/* a real command and its real output */
+.term{margin-top:22px;border:1px solid var(--line);border-radius:var(--r);background:var(--ink3);overflow-x:auto}
+.term pre{margin:0;padding:18px 20px;font-family:var(--mono);font-size:var(--xs);line-height:1.8;color:var(--fg2);white-space:pre}
+.term .p{color:var(--acc)}
+.term .o{color:var(--data)}
+/* a numbered ladder of steps */
+.steps{margin-top:28px;display:grid;gap:1px;background:var(--ink2);border:1px solid var(--line);border-radius:var(--rl);overflow:hidden}
+.step{background:var(--ink2);padding:20px 22px;display:grid;grid-template-columns:74px 1fr;gap:20px;box-shadow:0 0 0 1px var(--line);min-width:0}
+.step .t{font-family:var(--mono);font-size:var(--xs);color:var(--fg2);letter-spacing:.04em}
+.step h3{margin-bottom:6px}
+.step p{margin:0;font-size:var(--sm);color:var(--fg2);line-height:1.65}
+/* a two-column "is / is not" */
+.two{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1px;background:var(--ink2);border:1px solid var(--line);border-radius:var(--rl);overflow:hidden;margin-top:28px}
+.two>div{background:var(--ink2);padding:22px;box-shadow:0 0 0 1px var(--line);min-width:0}
+.two h3{margin-bottom:14px}
+.two ul{margin:0;padding:0;list-style:none}
+.two li{font-size:var(--sm);color:var(--fg2);line-height:1.6;padding:9px 0;border-top:1px solid var(--line)}
+.two li:first-child{border-top:0}
+.two li b{color:var(--fg)}
+/* a ladder of named layers */
+.layers{margin-top:28px;display:grid;gap:1px;background:var(--ink2);border:1px solid var(--line);border-radius:var(--rl);overflow:hidden}
+.layer{background:var(--ink2);box-shadow:0 0 0 1px var(--line);padding:20px 22px;display:grid;grid-template-columns:170px 1fr;gap:20px;min-width:0}
+.layer .k{min-width:0}
+.layer .k b{display:block;color:var(--fg);font-size:var(--sm);font-weight:600}
+.layer .k span{display:block;font-family:var(--mono);font-size:var(--xs);color:var(--fg2);margin-top:3px}
+.layer p{margin:0;font-size:var(--sm);color:var(--fg2);line-height:1.65}
+.layer .ref{font-family:var(--mono);font-size:var(--xs);color:var(--fg2);margin-top:10px;overflow-wrap:anywhere}
+.layer.cur{background:var(--ink3)}
+.layer.cur .k b{color:var(--acc)}
+/* code the reader is meant to read, never run */
+.code{margin-top:22px;border:1px solid var(--line);border-radius:var(--r);background:var(--ink3);overflow:hidden}
+.code .h{display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between;align-items:center;padding:11px 18px;border-bottom:1px solid var(--line);font-family:var(--mono);font-size:var(--xs);color:var(--fg2)}
+.code .h b{color:var(--fg);font-weight:500}
+.code .b{overflow-x:auto}
+.code pre{margin:0;padding:18px;font-family:var(--mono);font-size:var(--xs);line-height:1.8;color:var(--fg2);white-space:pre}
+.code .kw{color:var(--acc)}.code .st{color:var(--data)}.code .cm{color:var(--fg3)}.code .nu{color:var(--warn)}
+/* the formal tuple */
+.formal{margin-top:28px;border:1px solid var(--line2);border-radius:var(--rl);background:var(--ink3);padding:22px;overflow-x:auto}
+.formal .l{font-family:var(--mono);font-size:var(--xs);text-transform:uppercase;letter-spacing:.1em;color:var(--fg2);margin-bottom:14px}
+.formal .e{font-family:var(--mono);font-size:var(--sm);line-height:2;color:var(--fg);white-space:pre-wrap;overflow-wrap:anywhere}
+.formal .e i{font-style:normal;color:var(--acc)}
+.formal .e u{text-decoration:none;color:var(--data)}
+.formal .e s{text-decoration:none;color:var(--fg2)}
+
+@media(max-width:760px){.dim{grid-template-columns:1fr;gap:14px}.layer{grid-template-columns:1fr;gap:10px}.step{grid-template-columns:1fr;gap:8px}}
+/* An addition to the shared shell, and it is reported rather than made
+   quietly: at 390px `.top`'s space-between put the logo in the middle of a
+   two-row nav. Stacking it is one rule and it costs nothing wider. */
+@media(max-width:620px){.top{flex-direction:column;align-items:flex-start;gap:12px}.top nav{gap:12px 18px}}
+@media(max-width:640px){.status>div{grid-template-columns:1fr;gap:6px}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+
+/* --- IDENT: what this surface's animation looks like. Its own, entirely.
+   A delegation chain: authority travels down it until one link refuses, and
+   the refusal is the only thing on the page drawn in --warn that is not a
+   caveat. No labels, no values, nothing that could be read as a measurement. */
+.id-link line{stroke:var(--line2);stroke-width:1.5}
+.id-link line.hot{stroke:var(--acc)}
+.id-link line.no{stroke:var(--warn);stroke-dasharray:4 4}
+.id-node rect{fill:var(--ink3);stroke:var(--line2);stroke-width:1}
+.id-node rect.hot{stroke:var(--acc);fill:rgba(157,139,255,.14)}
+.id-node rect.no{stroke:var(--warn);fill:rgba(245,196,81,.1)}
+.id-tok circle{fill:var(--acc)}
+.id-tok circle.no{fill:var(--warn)}
