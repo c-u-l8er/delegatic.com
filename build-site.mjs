@@ -32,6 +32,7 @@
    No dependencies. No network.
    ========================================================================== */
 import { readFileSync, writeFileSync } from "fs";
+import { createHash } from "crypto";
 
 const read = (p) => readFileSync(new URL(p, import.meta.url), "utf8");
 const S = JSON.parse(read("./records/surface.json"));
@@ -122,6 +123,32 @@ function term() {
     return `<div class="term"><pre><span class="p">$</span> curl -s ${S.health.url}\n<span class="o">${esc(S.health.response)}</span></pre></div>`;
 }
 
+/* ---------- the contact form, SHELL.md r9 ----------
+   Ruled by Travis 2026-08-17. The endpoint is EMITTED FROM THE RECORD, never
+   typed into the template, for the same reason the band and the calls to
+   action are: a URL a page carries is a claim about where what you type goes,
+   and a claim that is not computed from the record cannot be audited against
+   it. The build refuses an endpoint that is not a formspree.io https URL, and
+   refuses to emit the form at all if the record still names a mailbox.
+
+   The honeypot is not optional and is not decoration — Formspree drops any
+   submission that fills `_gotcha`, and a bot fills every input it finds. */
+function say() {
+    const c = S.contact;
+    if (c.kind === "mailto" || /^mailto:/i.test(c.form_endpoint || ""))
+        throw new Error("BUILD REFUSED — contact is a mailbox; SHELL.md r9 requires a form endpoint");
+    if (!/^https:\/\/formspree\.io\/f\/[A-Za-z0-9]+$/.test(c.form_endpoint || ""))
+        throw new Error(`BUILD REFUSED — contact.form_endpoint is not a Formspree endpoint: ${c.form_endpoint}`);
+    return `<form class="say" action="${c.form_endpoint}" method="POST" novalidate>
+<div class="say-row">
+<label class="say-f"><span>Your email</span><input type="email" name="email" autocomplete="email" placeholder="so a reply can reach you" required></label>
+<label class="say-f"><span>Message</span><textarea name="message" rows="3" placeholder="a question, a correction, a number of ours you think is wrong" required></textarea></label>
+</div>
+<input type="text" name="_gotcha" tabindex="-1" autocomplete="off" aria-hidden="true">
+<div class="say-act"><button type="submit" class="btn">Send</button><p class="say-msg" role="status" aria-live="polite"></p></div>
+</form>`;
+}
+
 /* ---------- emit ---------- */
 let css = read("./src/shell.css");
 /* Keep the source commented; ship it dense. SHELL.md §5. */
@@ -180,6 +207,7 @@ const TOKENS = {
     REPO: S.repo,
     ISSUES: S.contact.url,
     SPEC_URL: S.spec_url,
+    SAY: say(),
     STAMP: `DELEGATIC v${S.version} · RECORD ${S.verified_at}`,
 };
 
@@ -189,8 +217,46 @@ for (const [k, v] of Object.entries(TOKENS)) html = html.split(`{{${k}}}`).join(
 const left = html.match(/\{\{\w+\}\}/g);
 if (left) throw new Error(`BUILD REFUSED — unrendered token(s): ${[...new Set(left)].join(", ")}`);
 
-writeFileSync(new URL("./index.html", import.meta.url), html);
-writeFileSync(new URL("./identity.js", import.meta.url), read("./src/identity.js"));
+/* ---------- emit, and RECORD THE EMIT ----------
+   SHELL.md r6, hole 2: nothing proved the artifact came from this build. If
+   this file threw, the previous index.html stayed on disk and the gate read
+   and approved a STALE ARTIFACT — a page nobody had just produced from the
+   sources beside it.
 
-console.log(`built index.html — ${html.length.toLocaleString()} bytes (${dense.length.toLocaleString()} of CSS inlined)`);
-console.log(`built identity.js — ${read("./src/identity.js").length.toLocaleString()} bytes`);
+   A digest of the OUTPUT alone does not close that: after a failed build the
+   old manifest and the old artifact still agree with each other. So the
+   manifest binds the INPUTS too. Edit a source and let the build throw, and
+   the recorded input digest no longer matches the file on disk — which is
+   exactly the condition "the artifact is older than its sources", and the
+   gate refuses on it. */
+const OUT = [
+    ["index.html", html],
+    ["identity.js", read("./src/identity.js")],
+    ["say.js", read("./src/say.js")],
+];
+for (const [name, body] of OUT) writeFileSync(new URL("./" + name, import.meta.url), body);
+
+const sha = (s) => createHash("sha256").update(s, "utf8").digest("hex");
+const INPUTS = ["./records/surface.json", "./package.json", "./build-site.mjs",
+    "./src/landing.html", "./src/shell.css", "./src/identity.js", "./src/say.js"];
+writeFileSync(
+    new URL("./records/build.json", import.meta.url),
+    JSON.stringify({
+        _comment:
+            "SHELL.md r6 hole 2. Written by build-site.mjs at the moment it emitted the artifact, and " +
+            "verified by launch-gate.mjs before it reads anything else. `inputs` is what the build read; " +
+            "`outputs` is what it wrote. If the build throws, this file is not rewritten, so a stale " +
+            "index.html no longer agrees with the sources beside it and the gate refuses. Do not hand-edit " +
+            "this file: it is a measurement, and editing it to make the gate pass is the one thing it exists " +
+            "to prevent.",
+        built_at: new Date().toISOString(),
+        builder: "build-site.mjs",
+        inputs: Object.fromEntries(INPUTS.map((p) => [p.replace("./", ""), sha(read(p))])),
+        outputs: Object.fromEntries(OUT.map(([n, b]) => [n, { bytes: Buffer.byteLength(b, "utf8"), sha256: sha(b) }])),
+    }, null, 2) + "\n",
+);
+
+for (const [name, body] of OUT)
+    console.log(`built ${name} — ${body.length.toLocaleString()} bytes`);
+console.log(`   (${dense.length.toLocaleString()} of CSS inlined)`);
+console.log(`wrote records/build.json — ${OUT.length} outputs, ${INPUTS.length} inputs bound by digest`);

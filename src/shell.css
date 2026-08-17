@@ -60,8 +60,17 @@ img,canvas,svg{max-width:100%}
 .logo span{color:var(--acc)}
 .logo:hover{color:var(--acc)}
 .top nav{display:flex;gap:22px;align-items:center;flex-wrap:wrap}
-.top nav a{color:var(--fg2);text-decoration:none;font-size:var(--sm);font-weight:500;white-space:nowrap}
-.top nav a:hover{color:var(--acc)}
+/* `:not(.btn)` is load-bearing, not tidiness. SHELL.md r7: `.top nav a` is
+   specificity 0,2,1 and `.btn` is 0,1,0, so an unscoped nav rule WINS over the
+   button's own ink and a call to action inside the header paints --fg2 on
+   --acc — washed-out light on a saturated accent — while the identical button
+   in the hero paints correctly. Measured here before the fix by injecting a
+   .btn into .top nav: rgba(233,234,242,.66) on #9d8bff instead of #0f0a2a.
+   Scope the nav rule rather than raising .btn; raising .btn only moves the
+   collision to the next rule that out-specifies it. launch-gate §13 resolves
+   the cascade statically and refuses if any .btn loses its declared colour. */
+.top nav a:not(.btn){color:var(--fg2);text-decoration:none;font-size:var(--sm);font-weight:500;white-space:nowrap}
+.top nav a:not(.btn):hover{color:var(--acc)}
 .btn{display:inline-block;background:var(--acc);color:var(--acc-ink);font-weight:700;border-radius:var(--r);padding:11px 20px;text-decoration:none;font-size:var(--sm)}
 .btn.ghost{background:transparent;color:var(--fg);border:1px solid var(--line2);font-weight:500}
 .btn:hover{filter:brightness(1.08)}
@@ -88,9 +97,23 @@ section{padding:56px 0;border-top:1px solid var(--line)}
 section:first-of-type{border-top:0}
 .eyebrow{font-family:var(--mono);font-size:var(--xs);text-transform:uppercase;letter-spacing:.14em;color:var(--acc);display:flex;align-items:center;gap:11px;margin-bottom:14px}
 .eyebrow::before{content:"";width:20px;height:1px;background:var(--acc);opacity:.6;flex:none}
-h1{font-family:var(--display);font-weight:600;font-size:var(--h1);line-height:1.02;letter-spacing:-.02em;max-width:16ch;text-wrap:balance}
+/* line-height on the display face is MEASURED, not inherited from the shell.
+   SHELL.md r7: a line box smaller than the font's own box makes consecutive
+   lines' em boxes overlap, and a descender then reads as clipped against the
+   cap-height beneath it.
+
+   Archivo 600: fontBoundingBoxAscent+Descent is 72 px at 65.6 px, i.e. 1.0976
+   x the font size, so `line-height:1.02` (66.91 px) left the em boxes
+   overlapping by 5.09 px; h2 at 1.08 had 0.2 px of clearance at 1280 and was
+   already NEGATIVE at 390. The values below are the measured requirement plus
+   0.04, which absorbs the +-1 px integer quantisation of fontBoundingBox and
+   leaves visible clearance. The ratios are recorded in records/surface.json
+   (`type_metrics`) and launch-gate §14 refuses if this stylesheet drops below
+   them. Newsreader needs ~1.05 and Syne ~1.24 for the same job: THE VALUE IS
+   THE FACE'S, NOT THE SHELL'S. Do not copy it without re-measuring. */
+h1{font-family:var(--display);font-weight:600;font-size:var(--h1);line-height:1.18;letter-spacing:-.02em;max-width:16ch;text-wrap:balance}
 h1 em{font-style:italic;color:var(--acc)}
-h2{font-family:var(--display);font-weight:600;font-size:var(--h2);line-height:1.08;letter-spacing:-.015em;text-wrap:balance}
+h2{font-family:var(--display);font-weight:600;font-size:var(--h2);line-height:1.18;letter-spacing:-.015em;text-wrap:balance}
 h3{font-size:var(--md);font-weight:600}
 .lede{color:var(--fg2);font-size:var(--md);line-height:1.65;max-width:64ch;margin:14px 0 0}
 p{margin:14px 0 0}
@@ -227,6 +250,31 @@ footer .links{display:flex;flex-wrap:wrap;gap:20px;min-width:0}
    two-row nav. Stacking it is one rule and it costs nothing wider. */
 @media(max-width:620px){.top{flex-direction:column;align-items:flex-start;gap:12px}.top nav{gap:12px 18px}}
 @media(max-width:640px){.status>div{grid-template-columns:1fr;gap:6px}}
+/* --- the contact form (SHELL.md r9) ---------------------------------------
+   Ruled by Travis 2026-08-17: contact is the ComputeDriven Formspree form.
+   The `.btn` here is a real submit button, so it is in scope for the cascade
+   check in launch-gate §13 exactly like the hero's calls to action are — that
+   is the point of checking every .btn on the page rather than a hand-listed
+   few. No new colour token: the form reuses --ink2/--line/--fg2 so it reads
+   as part of the same surface rather than a bolted-on widget. */
+.say{margin-top:20px;border:1px solid var(--line);border-radius:var(--rl);background:var(--ink2);padding:20px;max-width:64ch}
+.say-row{display:grid;grid-template-columns:1fr 1.35fr;gap:14px}
+.say-f{display:block;min-width:0}
+.say-f span{display:block;font-family:var(--mono);font-size:var(--xs);text-transform:uppercase;letter-spacing:.12em;color:var(--fg2);margin-bottom:7px}
+.say input[type=email],.say textarea{display:block;width:100%;background:var(--ink);color:var(--fg);border:1px solid var(--line2);border-radius:var(--r);padding:11px 13px;font:inherit;font-size:var(--sm);resize:vertical}
+.say input[type=email]::placeholder,.say textarea::placeholder{color:var(--fg3)}
+.say input[type=email]:hover,.say textarea:hover{border-color:var(--acc-line)}
+.say input[type=email]:focus-visible,.say textarea:focus-visible{outline:2px solid var(--acc);outline-offset:2px;border-color:var(--acc-line)}
+/* The honeypot. A bot fills it; a person never sees it. Not display:none —
+   some bots skip what is display:none, which defeats the purpose. */
+.say input[name="_gotcha"]{position:absolute;left:-9999px;width:1px;height:1px;opacity:0}
+.say-act{display:flex;flex-wrap:wrap;align-items:center;gap:14px;margin-top:16px}
+.say-msg{margin:0;font-size:var(--sm);color:var(--fg2);min-height:1.2em}
+.say-msg.ok{color:var(--data)}
+.say-msg.bad{color:var(--warn)}
+.say-note{font-size:var(--sm);color:var(--fg2);line-height:1.7;max-width:80ch;margin:14px 0 0}
+@media(max-width:640px){.say-row{grid-template-columns:1fr}}
+
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
 
 /* --- IDENT: what this surface's animation looks like. Its own, entirely.

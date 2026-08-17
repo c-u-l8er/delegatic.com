@@ -183,6 +183,13 @@
 <h3>Retraction &mdash; what used to stand here</h3>
 <p>&ldquo;Enterprise governance. Open-source core. Launching 2026.&rdquo; stood here, above an email box wired to nothing — no form, no handler, no destination. It is August. <b>Both are gone rather than moved to a later year.</b> A footer <code>mailto:</code> went with them in this revision: Cloudflare was rewriting it at the edge for obfuscation, which is the entire reason the served page measured 159 bytes larger than the file in this repository.</p>
 </div>
+
+<div class="say-wrap">
+<h3>Tell us where this specification is wrong</h3>
+<p>The kernel is deployed and the page above it is a specification, so the most useful thing a visitor can send is a containment rule that does not hold, an invariant that is weaker than it reads, or a number on this page you think is wrong.</p>
+{{SAY}}
+<p class="say-note"><b>This box is not that one.</b> The retraction above names what the old one lacked. This is a plain <code>&lt;form action method="POST"&gt;</code> posting to <code>formspree.io</code> when you press Send, so it delivers with scripting switched off entirely; the script that upgrades it to an inline reply prints &ldquo;sent&rdquo; only after the endpoint returns a 2xx, and prints what went wrong otherwise. Ruled 2026-08-17: the same endpoint <b>computedriven.com</b> uses. The publication gate still refuses any address link anywhere on this page.</p>
+</div>
 </section>
 
 </div>
@@ -193,4 +200,9 @@
 </div></footer>
 
 <script src="/identity.js" defer></script>
+<!-- say.js only upgrades the contact form to an inline reply. The form is a
+     real <form action method="POST"> and delivers with this file blocked,
+     missing or switched off; see src/say.js. It is deliberately NOT part of
+     identity.js, which the gate forbids from touching page content at all. -->
+<script src="/say.js" defer></script>
 </body></html>

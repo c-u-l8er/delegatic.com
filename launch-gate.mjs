@@ -15,12 +15,13 @@
    deliberately once and watched to fail; the count is in the commit message.
    ========================================================================== */
 import { readFileSync, existsSync } from "fs";
+import { createHash } from "crypto";
 
 const read = (p) => readFileSync(new URL(p, import.meta.url), "utf8");
 const S = JSON.parse(read("./records/surface.json"));
 const PKG = JSON.parse(read("./package.json"));
 
-for (const f of ["./index.html", "./identity.js"])
+for (const f of ["./index.html", "./identity.js", "./say.js"])
     if (!existsSync(new URL(f, import.meta.url))) {
         console.error(`FAIL  missing artifact ${f} — run the build first`);
         process.exit(1);
@@ -55,8 +56,17 @@ const decode = (s) =>
             ? String.fromCodePoint(e[1] === "x" || e[1] === "X" ? parseInt(e.slice(2), 16) : parseInt(e.slice(1), 10))
             : e in NAMED ? NAMED[e] : m,
     );
-const strip = (h) => decode(h.replace(/<[^>]+>/g, " ")).replace(/\s+/g, " ").trim();
-const TEXT = strip(HTML.replace(/<script[\s\S]*?<\/script>|<style[\s\S]*?<\/style>|<!--[\s\S]*?-->/g, " "));
+/* SHELL.md r8: `<[^>]+>` STOPS AT THE FIRST `>`. An HTML comment that
+   contains one — and the comments in this tree are full of them: `-->`,
+   `a > b`, `<form action method="POST">` — is therefore only partially
+   removed, and the remainder is counted as visible page text. Comments come
+   off in their own pass, ahead of any tag stripping, inside strip() itself so
+   that EVERY caller gets it: the band extract, the retraction extract, and
+   the blocklist counter in §2b whose entire job is telling visible from
+   hidden. */
+const decomment = (h) => h.replace(/<!--[\s\S]*?-->/g, " ");
+const strip = (h) => decode(decomment(h).replace(/<[^>]+>/g, " ")).replace(/\s+/g, " ").trim();
+const TEXT = strip(HTML.replace(/<script[\s\S]*?<\/script>|<style[\s\S]*?<\/style>/g, " "));
 
 /* ==========================================================================
    1. Release identity, and the artifact is fully rendered
@@ -91,6 +101,102 @@ T("no HTML comment carries a literal script tag",
 }
 T("the correction channel is a live URL, not a mailbox",
     /^https:\/\//.test(S.contact.url) && S.contact.kind !== "mailto", S.contact.url);
+
+/* ==========================================================================
+   2b. The retraction CONFINES what it retracts — counted, not detected
+   ------------------------------------------------------------------------
+   SHELL.md r6, hole 1. The old check asked "is the retraction present?" and
+   stopped. Presence is not the property. A page could KEEP its retraction and
+   reinstate the retracted sentence anywhere else on the page and pass — a
+   real deliberate break report did exactly that, which is why this lane's
+   earlier "44 breaks forced, 44 refused" is an upper bound and not a proof.
+
+   CONFINEMENT is the property. Every needle is counted in the raw artifact
+   AND in the extracted text, and every occurrence must fall inside the
+   retraction region; `max_total` additionally bounds the count so the
+   retraction cannot be padded with reinstated copies of what it retracts.
+   Both spaces are counted because a needle can be written as an entity in one
+   and read as a character in the other.
+
+   The region is extracted by BALANCED DEPTH. A non-greedy match to the first
+   </div> would silently truncate the region if a <div> were ever nested in
+   it — the counter would then read part of the retraction as "outside" and
+   refuse. That is the safe direction, but a check that is right for the wrong
+   reason stops being right when the markup changes.
+   ========================================================================== */
+{
+    const BL = S.retraction_blocklist;
+    T("the surface records what its retraction is supposed to confine",
+        !!BL && Array.isArray(BL.terms) && BL.terms.length > 0,
+        BL ? `${BL.terms.length} needles` : "MISSING");
+
+    const region = (() => {
+        const open = HTML.indexOf('<div class="retract">');
+        if (open < 0) return null;
+        let depth = 0;
+        const re = /<(\/?)div\b[^>]*>/g;
+        re.lastIndex = open;
+        let m;
+        while ((m = re.exec(HTML))) {
+            depth += m[1] ? -1 : 1;
+            if (depth === 0) return HTML.slice(open, m.index + m[0].length);
+        }
+        return null;
+    })();
+    T("the retraction region is present and its tags balance", !!region,
+        region ? `${region.length} bytes` : "unbalanced or absent");
+
+    if (BL && region) {
+        /* SHELL.md r10 — THE BOUND IS A NUMBER, NOT AN EQUALITY.
+           The obvious implementation of r6 is `onPage === insideRetraction`:
+           every occurrence accounted for inside the retraction. It is still
+           defective, and a sibling lane watched it approve a lie. The
+           retraction is authored content, so an equality lets the blocklisted
+           sentence repeat WITHOUT LIMIT inside it — on agentelic.com it was
+           appended three times, putting the retracted claim on the artifact
+           four times, and the gate reported 114 passed, 0 refused.
+
+           So: outside must be 0, AND inside is bounded by a literal from the
+           record, AND the two are separate checks. The general rule is r10's:
+           a check whose two sides are both under the author's control is not
+           a check. `max_total` is a number someone has to raise on purpose, in
+           a diff, with a reason — not a quantity the page can re-derive by
+           editing itself.
+
+           HIDDEN occurrences are refused outright rather than bounded. A
+           needle that is in the markup but not in the rendered text is in a
+           comment or a non-rendering attribute; it is not a retraction and it
+           is not visible, so there is no count at which it is acceptable. */
+        const regionText = strip(region);
+        const visibleHTML = decomment(HTML);
+        const count = (hay, needle) => hay.split(needle).length - 1;
+        const escaped = [], loose = [], over = [], inner = [], hidden = [];
+        for (const { needle, max_total } of BL.terms) {
+            const hRaw = count(HTML, needle), hIn = count(region, needle);
+            const tRaw = count(TEXT, needle), tIn = count(regionText, needle);
+            if (hRaw === 0 && tRaw === 0) { escaped.push(`"${needle}" has vanished — the retraction no longer names it`); continue; }
+            const outside = (hRaw - hIn) + (tRaw - tIn);
+            if (outside > 0) loose.push(`"${needle}" appears ${outside}x OUTSIDE the retraction`);
+            const total = Math.max(hRaw, tRaw);
+            if (total > max_total) over.push(`"${needle}" ${total}x on the page, bound is ${max_total}`);
+            /* The inside count is bounded on its own, so this still refuses if
+               the confinement check above is ever weakened or removed. */
+            const inside = Math.max(hIn, tIn);
+            if (inside > max_total) inner.push(`"${needle}" repeats ${inside}x INSIDE the retraction, bound is ${max_total}`);
+            const hid = count(visibleHTML, needle) - count(HTML, needle);
+            if (hid !== 0) hidden.push(`"${needle}" appears ${-hid}x inside an HTML comment`);
+        }
+        T("the retraction still names every string it retracts", escaped.length === 0, escaped.join("; ") || "all present");
+        T("no retracted string has been reinstated outside the retraction", loose.length === 0,
+            loose.join("; ") || `${BL.terms.length} needles, every occurrence confined`);
+        T("no retracted string exceeds the count the record bounds it to", over.length === 0,
+            over.join("; ") || BL.terms.map((t) => `${t.needle}<=${t.max_total}`).join(", "));
+        T("no retracted string repeats inside the retraction beyond its bound", inner.length === 0,
+            inner.join("; ") || "the retraction states each of them once, within bound");
+        T("no retracted string is hidden in a comment rather than retracted", hidden.length === 0,
+            hidden.join("; ") || "none concealed");
+    }
+}
 
 /* ==========================================================================
    3. The placement band, and the tier it is allowed to claim
@@ -309,14 +415,17 @@ T("the LIMIT row names something the evidence does NOT establish",
 {
     const tags = [...HTML.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)];
     T("the page ships no inline JavaScript", tags.every((t) => t[2].trim() === ""), `${tags.length} script tags`);
-    T("the only scripts are the portfolio nav and the identity animation",
-        tags.length === 2 &&
+    /* Three now, and the third is the r9 contact form's upgrade. It is a
+       separate file on purpose: identity.js is forbidden by §9 from reading or
+       writing page content at all, and the form upgrade does nothing else. */
+    T("the only scripts are the portfolio nav, the identity animation and the form upgrade",
+        tags.length === 3 &&
         tags.some((t) => /amp-nav\.js/.test(t[1])) &&
-        tags.some((t) => /\bsrc="\/identity\.js"/.test(t[1]) && /\bdefer\b/.test(t[1])),
+        tags.some((t) => /\bsrc="\/identity\.js"/.test(t[1]) && /\bdefer\b/.test(t[1])) &&
+        tags.some((t) => /\bsrc="\/say\.js"/.test(t[1]) && /\bdefer\b/.test(t[1])),
         tags.map((t) => (t[1].match(/src="([^"]*)"/) || [, "inline"])[1]).join(", "));
     T("the page carries its content as text, not as a hydration target",
         TEXT.length > 9000, `${TEXT.length.toLocaleString()} characters with script and style stripped`);
-    T("the retraction survives in the artifact", /Launching 2026\.&rdquo; stood here|Launching 2026.” stood here/.test(TEXT));
     /* A repeated inline style string across n cells is bytes for nothing, and
        it is how a shared shell stops being shared. SHELL.md §5. */
     T("no inline style= attribute in the artifact", !/\sstyle="/.test(HTML));
@@ -414,6 +523,343 @@ T("the LIMIT row names something the evidence does NOT establish",
     T("every interactive element has a visible :hover", naked.length === 0,
         naked.length ? `no hover for: ${naked.join(", ")}` : `${handles.size} kinds, all covered`);
     T("the page declares a :focus-visible ring", /:focus-visible\s*\{/.test(styles));
+}
+
+/* ==========================================================================
+   13. Every .btn keeps its own ink — THE CASCADE IS RESOLVED, NOT ASSUMED
+   ------------------------------------------------------------------------
+   SHELL.md r7/r8. `.top nav a` is specificity 0,2,1 and `.btn` is 0,1,0, so
+   an unscoped nav rule WINS and a call to action inside the header paints
+   --fg2 on --acc — washed-out light on a saturated accent — while the
+   identical button in the hero paints correctly.
+
+   Nothing we ran caught it, and §11 is the reason: the contrast maths reads
+   DECLARED TOKENS. The pair it checks is the pair the button was supposed to
+   have. The token was always fine; the element never received it. That is why
+   44 forced breaks did not catch this one.
+
+   So this resolves the cascade over the ARTIFACT instead. For every element
+   carrying .btn: find every rule that matches it and declares `color`, take
+   the winner by (!important, specificity, source order), and refuse unless
+   the winner is itself a rule whose rightmost compound carries .btn.
+
+   It FAILS CLOSED. A selector the parser does not understand, a second
+   stylesheet, a colour inside an @media — any of them and this refuses rather
+   than reports a verdict it cannot stand behind. The verdicts were
+   cross-checked against a real browser's getComputedStyle for every .btn on
+   the page; they agreed on every one.
+   ========================================================================== */
+{
+    const styleBlocks = [...HTML.matchAll(/<style[^>]*>([\s\S]*?)<\/style>/gi)].map((m) => m[1]);
+    T("the artifact carries exactly one stylesheet of its own", styleBlocks.length === 1,
+        `${styleBlocks.length} <style> blocks`);
+    const links = [...HTML.matchAll(/<link\b[^>]*>/gi)].filter((m) => /rel="stylesheet"/.test(m[0]))
+        .map((m) => (m[0].match(/href="([^"]*)"/) || [, ""])[1]);
+    T("the only external stylesheet is the font service — nothing else can paint",
+        links.length > 0 && links.every((h) => /^https:\/\/fonts\.googleapis\.com\//.test(h)),
+        links.join(", ") || "none");
+
+    const SHEET = styleBlocks.join("\n").replace(/\/\*[\s\S]*?\*\//g, " ");
+    const mediaBlocks = [...SHEET.matchAll(/@media[^{]*\{((?:[^{}]|\{[^{}]*\})*)\}/g)];
+    T("no colour is declared inside an @media block — so one static resolution is the whole truth",
+        !mediaBlocks.some((m) => /(?:^|[;{])\s*color\s*:/.test(m[1])), `${mediaBlocks.length} @media blocks`);
+
+    /* ---- :root custom properties, so a verdict prints a colour and not a var() ---- */
+    const VARS = {};
+    for (const m of SHEET.matchAll(/:root\{([^}]*)\}/g))
+        for (const d of m[1].split(";")) {
+            const kv = /^\s*(--[\w-]+)\s*:\s*(.+)$/.exec(d);
+            if (kv) VARS[kv[1]] = kv[2].trim();
+        }
+    const resolve = (v) => {
+        let s = v, n = 0;
+        while (/var\(/.test(s) && n++ < 8)
+            s = s.replace(/var\(\s*(--[\w-]+)\s*(?:,[^()]*)?\)/g, (m, k) => (k in VARS ? VARS[k] : m));
+        return s.trim();
+    };
+
+    /* ---- the rules that declare a colour, in source order ---- */
+    const RULES = [];
+    let parseFailed = null;
+    {
+        const flat = SHEET.replace(/@media[^{]*\{(?:[^{}]|\{[^{}]*\})*\}/g, " ");
+        let m, order = 0;
+        const re = /([^{}]+)\{([^{}]*)\}/g;
+        while ((m = re.exec(flat))) {
+            const col = /(?:^|;)\s*color\s*:\s*([^;]+)/.exec(m[2]);
+            if (col)
+                for (const s of m[1].split(","))
+                    if (s.trim())
+                        RULES.push({ sel: s.trim(), color: col[1].replace(/!important/, "").trim(),
+                            important: /!important/.test(col[1]), order });
+            order++;
+        }
+    }
+
+    /* ---- selector parsing. Anything unsupported returns null and refuses. ---- */
+    const SIMPLE = /^(?:(\*)|([a-zA-Z][\w-]*)|\.([\w-]+)|#([\w-]+)|\[([\w-]+)(?:\s*=\s*"?([^\]"]*)"?)?\]|:not\(([^()]*)\)|::([\w-]+)|:([\w-]+))/;
+    const STATEFUL = /^(hover|focus|focus-visible|focus-within|active|visited|target)$/;
+    const STRUCTURAL = /^(first-of-type|last-of-type|first-child|last-child|only-child|root)$/;
+    function compound(src) {
+        const c = { tag: null, id: null, cls: [], attrs: [], not: [], state: false, structural: false, pseudoElement: false, sp: [0, 0, 0] };
+        let i = 0;
+        if (!src) return null;
+        while (i < src.length) {
+            const m = SIMPLE.exec(src.slice(i));
+            if (!m) return null;
+            i += m[0].length;
+            if (m[1] !== undefined) { /* * adds nothing */ }
+            else if (m[2] !== undefined) { c.tag = m[2].toLowerCase(); c.sp[2]++; }
+            else if (m[3] !== undefined) { c.cls.push(m[3]); c.sp[1]++; }
+            else if (m[4] !== undefined) { c.id = m[4]; c.sp[0]++; }
+            else if (m[5] !== undefined) { c.attrs.push([m[5], m[6]]); c.sp[1]++; }
+            else if (m[7] !== undefined) {
+                const inner = compound(m[7].trim());
+                if (!inner) return null;
+                c.not.push(inner);
+                for (let k = 0; k < 3; k++) c.sp[k] += inner.sp[k];
+            } else if (m[8] !== undefined) {
+                /* A pseudo-ELEMENT paints something that is not the element —
+                   ::placeholder, ::before. It can never decide a button's own
+                   colour, so it is recorded and then excluded, rather than
+                   being treated as unparseable and refusing the whole run. */
+                c.pseudoElement = true;
+                c.sp[2]++;
+            } else if (m[9] !== undefined) {
+                if (STATEFUL.test(m[9])) c.state = true;
+                else if (STRUCTURAL.test(m[9])) c.structural = true;
+                else return null;
+                c.sp[1]++;
+            }
+        }
+        return c;
+    }
+    function parseSelector(sel) {
+        const toks = sel.replace(/\s*>\s*/g, " > ").trim().split(/\s+/).filter(Boolean);
+        const seq = [];
+        for (const t of toks) {
+            if (t === ">") { seq.push(">"); continue; }
+            const c = compound(t);
+            if (!c) return null;
+            seq.push(c);
+        }
+        return seq.length ? seq : null;
+    }
+    for (const r of RULES) {
+        r.seq = parseSelector(r.sel);
+        if (!r.seq) parseFailed = r.sel;
+    }
+    T("every colour selector in the emitted stylesheet parses — the check fails closed",
+        !parseFailed, parseFailed ? `cannot parse: ${parseFailed}` : `${RULES.length} colour rules`);
+
+    /* ---- the artifact's elements, each with its ancestor chain ---- */
+    const VOID = new Set(["area", "base", "br", "col", "embed", "hr", "img", "input",
+        "link", "meta", "param", "source", "track", "wbr"]);
+    function elements(html) {
+        const src = html.replace(/<script[\s\S]*?<\/script>|<style[\s\S]*?<\/style>/gi, " ")
+            .replace(/<!--[\s\S]*?-->/g, " ");
+        const out = [], stack = [];
+        const re = /<(\/?)([a-zA-Z][\w-]*)((?:"[^"]*"|'[^']*'|[^>"'])*?)(\/?)>/g;
+        let m;
+        while ((m = re.exec(src))) {
+            const [, close, rawTag, attrText, selfClose] = m;
+            const tag = rawTag.toLowerCase();
+            if (close) {
+                for (let i = stack.length - 1; i >= 0; i--) if (stack[i].tag === tag) { stack.length = i; break; }
+                continue;
+            }
+            const attrs = {};
+            for (const a of attrText.matchAll(/([\w-]+)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'>]+)))?/g))
+                attrs[a[1].toLowerCase()] = a[2] ?? a[3] ?? a[4] ?? "";
+            const el = {
+                tag, id: attrs.id || null,
+                cls: (attrs.class || "").trim().split(/\s+/).filter(Boolean),
+                attrs, chain: stack.slice(),
+            };
+            out.push(el);
+            if (!VOID.has(tag) && !selfClose) stack.push(el);
+        }
+        return out;
+    }
+    function matchCompound(c, el) {
+        if (c.structural) return false;   /* not resolvable here; refuse to claim it matches */
+        if (c.tag && c.tag !== el.tag) return false;
+        if (c.id && c.id !== el.id) return false;
+        for (const k of c.cls) if (!el.cls.includes(k)) return false;
+        for (const [a, v] of c.attrs) {
+            const got = el.attrs[a.toLowerCase()];
+            if (got === undefined) return false;
+            if (v !== undefined && got !== v) return false;
+        }
+        for (const n of c.not) if (matchCompound(n, el)) return false;
+        return true;
+    }
+    function matches(seq, el) {
+        let i = seq.length - 1;
+        if (!matchCompound(seq[i], el)) return false;
+        i--;
+        let a = el.chain.length - 1, child = false;
+        while (i >= 0) {
+            if (seq[i] === ">") { child = true; i--; continue; }
+            let found = false;
+            while (a >= 0) {
+                if (matchCompound(seq[i], el.chain[a])) { found = true; a--; break; }
+                if (child) return false;
+                a--;
+            }
+            if (!found) return false;
+            child = false;
+            i--;
+        }
+        return true;
+    }
+    const specOf = (seq) => seq.filter((s) => s !== ">")
+        .reduce((acc, c) => [acc[0] + c.sp[0], acc[1] + c.sp[1], acc[2] + c.sp[2]], [0, 0, 0]);
+    const cmp = (x, y) => x[0] - y[0] || x[1] - y[1] || x[2] - y[2];
+
+    const btnDeclared = resolve((RULES.find((r) => r.sel === ".btn") || {}).color || "");
+    T("the stylesheet declares an ink colour for .btn", !!btnDeclared, btnDeclared || "none");
+
+    const buttons = elements(HTML).filter((e) => e.cls.includes("btn"));
+    T("the artifact renders at least one .btn to check", buttons.length > 0, `${buttons.length} buttons`);
+
+    const stolen = [], resolved = [];
+    for (const b of buttons) {
+        let win = null;
+        for (const r of RULES) {
+            if (!r.seq) continue;
+            /* resting state only, and never a pseudo-element */
+            if (r.seq.some((s) => s !== ">" && (s.state || s.pseudoElement))) continue;
+            if (!matches(r.seq, b)) continue;
+            if (!win) { win = r; continue; }
+            if (r.important !== win.important) { if (r.important) win = r; continue; }
+            const d = cmp(specOf(r.seq), specOf(win.seq));
+            if (d > 0 || (d === 0 && r.order >= win.order)) win = r;
+        }
+        const rightmost = win ? win.seq.filter((s) => s !== ">").slice(-1)[0] : null;
+        const ownedByBtn = !!rightmost && rightmost.cls.includes("btn");
+        const where = b.chain.slice(-2).map((a) => a.tag + (a.cls[0] ? "." + a.cls[0] : "")).join(">");
+        resolved.push(`${b.tag}.${b.cls.join(".")}@${where}=${resolve(win ? win.color : "inherit")}`);
+        if (!ownedByBtn)
+            stolen.push(`${b.tag}.${b.cls.join(".")} inside ${where} → "${win ? win.sel : "NOTHING"}" paints ${resolve(win ? win.color : "inherit")}, not .btn's ${btnDeclared}`);
+    }
+    /* The resolved colour of every button is PRINTED, passing or failing. That
+       is what makes this auditable against a browser: SHELL.md r8 asks for the
+       verdicts to be cross-checked against getComputedStyle, and a check that
+       only speaks when it is unhappy cannot be. */
+    T("every .btn's colour is decided by a .btn rule, not by a rule that out-specifies it",
+        stolen.length === 0, stolen.join(" | ") || resolved.join("  "));
+}
+
+/* ==========================================================================
+   14. The display face's line box clears the face's own box
+   ------------------------------------------------------------------------
+   SHELL.md r7. Travis reported the `g` of "agents" reading as cut off. A line
+   box smaller than the font's own box makes consecutive lines' em boxes
+   overlap and a descender collides with the cap-height beneath it.
+
+   The metrics cannot be measured here — there is no font engine in node and
+   this gate takes no dependencies. So they are MEASURED IN A BROWSER, once,
+   and recorded in records/surface.json with the method that produced them;
+   this checks the record's own arithmetic, checks the recorded line-height
+   clears the requirement, and checks the EMITTED stylesheet still carries
+   that line-height. A value edited in the CSS without re-measuring refuses.
+   ========================================================================== */
+{
+    const M = S.type_metrics;
+    T("the surface records the type metrics it was measured against",
+        !!M && !!M.selectors && typeof M.margin === "number", M ? `${Object.keys(M.selectors).length} selectors, face ${M.display_face}` : "MISSING");
+    if (M && M.selectors) {
+        const SHEET = [...HTML.matchAll(/<style[^>]*>([\s\S]*?)<\/style>/gi)].map((m) => m[1]).join("\n");
+        const bad = [];
+        for (const [sel, m] of Object.entries(M.selectors)) {
+            const need = +(Math.max(m.font_box_ratio, m.ink_box_ratio) + M.margin).toFixed(4);
+            if (Math.abs(need - m.required_ratio) > 1e-4)
+                bad.push(`${sel}: record says required ${m.required_ratio}, its own numbers say ${need}`);
+            if (m.line_height < m.required_ratio)
+                bad.push(`${sel}: recorded line-height ${m.line_height} is below the required ${m.required_ratio}`);
+            const esc = sel.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+            const rule = new RegExp(`(?:^|[};])${esc}\\{([^}]*)\\}`).exec(SHEET);
+            if (!rule) { bad.push(`${sel}: no such rule in the emitted stylesheet`); continue; }
+            const lh = /(?:^|;)\s*line-height\s*:\s*([\d.]+)/.exec(rule[1]);
+            if (!lh) { bad.push(`${sel}: the emitted rule declares no line-height`); continue; }
+            if (Math.abs(parseFloat(lh[1]) - m.line_height) > 1e-6)
+                bad.push(`${sel}: the artifact ships ${lh[1]}, the record was measured at ${m.line_height}`);
+        }
+        T("every display heading's line box clears the ink measured for its face", bad.length === 0,
+            bad.join(" | ") || Object.entries(M.selectors).map(([s, m]) => `${s} ${m.line_height}>=${m.required_ratio}`).join(", "));
+    }
+}
+
+/* ==========================================================================
+   15. The artifact came from THIS build
+   ------------------------------------------------------------------------
+   SHELL.md r6, hole 2. Nothing proved it. If build-site.mjs threw, the
+   previous index.html stayed on disk and this gate read it and approved it —
+   a page nobody had just produced from the sources beside it. A real
+   deliberate break report PASSED on exactly that.
+
+   Output digests alone do not close it: after a failed build the old manifest
+   and the old artifact still agree with each other. So the manifest binds the
+   INPUTS as well, and a source that has moved on since the artifact was
+   written is the definition of stale.
+   ========================================================================== */
+{
+    let B = null, why = "";
+    try { B = JSON.parse(read("./records/build.json")); } catch (e) { why = String(e.message || e); }
+    T("the build left a manifest of what it emitted", !!B && !!B.inputs && !!B.outputs,
+        B ? `built_at ${B.built_at}` : `records/build.json unreadable — ${why}`);
+    if (B && B.inputs && B.outputs) {
+        const sha = (s) => createHash("sha256").update(s, "utf8").digest("hex");
+        const digestOf = (p) => { try { return sha(read("./" + p)); } catch { return null; } };
+        const badOut = Object.entries(B.outputs).filter(([n, o]) => digestOf(n) !== o.sha256);
+        T("every artifact on disk is byte-for-byte the one the build emitted", badOut.length === 0,
+            badOut.map(([n]) => n).join(", ") || `${Object.keys(B.outputs).length} outputs verified`);
+        const badIn = Object.entries(B.inputs).filter(([n, d]) => digestOf(n) !== d);
+        T("every source is the one the build read — the artifact is not stale", badIn.length === 0,
+            badIn.length ? `CHANGED SINCE THE BUILD: ${badIn.map(([n]) => n).join(", ")} — rebuild` :
+                `${Object.keys(B.inputs).length} inputs verified`);
+    }
+}
+
+/* ==========================================================================
+   16. The contact form, SHELL.md r9
+   ------------------------------------------------------------------------
+   Ruled by Travis 2026-08-17: contact is the ComputeDriven Formspree form.
+   This page pointed corrections at GitHub issues and flagged the missing
+   endpoint [TRAVIS]; that item is answered.
+
+   The properties worth refusing on are the ones that make it a form rather
+   than a gesture: a real action a browser can POST without scripting, the
+   honeypot the endpoint needs, a reply a screen reader hears, and — the one
+   this portfolio actually cares about — success printed only on a 2xx.
+   ========================================================================== */
+{
+    const SAY = read("./say.js");
+    const form = (HTML.match(/<form\b[^>]*class="say"[\s\S]*?<\/form>/) || [""])[0];
+    T("the page carries a contact form", !!form, form ? `${form.length} bytes of markup` : "none");
+    const action = (form.match(/\baction="([^"]*)"/) || [, ""])[1];
+    T("the form posts to the endpoint the record declares", action === S.contact.form_endpoint,
+        `${action || "none"} / ${S.contact.form_endpoint}`);
+    T("the endpoint is Formspree over https, and is not a mailbox",
+        /^https:\/\/formspree\.io\/f\/[A-Za-z0-9]+$/.test(action));
+    T("it is a real POST form, not a fetch bolted to a button — it works with scripting off",
+        /\bmethod="POST"/i.test(form) && !!action);
+    T("the honeypot Formspree needs is present and hidden from people",
+        /name="_gotcha"/.test(form) && /tabindex="-1"/.test(form) &&
+        /autocomplete="off"/.test(form) && /aria-hidden="true"/.test(form));
+    T("the reply is announced rather than only drawn",
+        /role="status"/.test(form) && /aria-live="polite"/.test(form));
+    T("the submit control is a .btn, so §13 resolves its colour too",
+        /<button[^>]*\btype="submit"[^>]*\bclass="[^"]*\bbtn\b/.test(form));
+    T("the placeholder still invites the message this portfolio most needs",
+        /a number of ours you think is wrong/.test(form));
+    T("the upgrade never rewrites the action, so the no-script path cannot be diverted",
+        !/\.action\s*=[^=]/.test(SAY));
+    T("success is printed only on an actual 2xx from the endpoint",
+        /\br\.ok\b/.test(SAY) && /\bres\.ok\b/.test(SAY) && !/say\(\s*"Sent[\s\S]{0,120}?\bfetch\(/.test(SAY));
+    T("the correction channel keeps a second route that is not a mailbox",
+        /^https:\/\//.test(S.contact.url) && !/^mailto:/i.test(S.contact.url), S.contact.url);
 }
 
 /* ==========================================================================

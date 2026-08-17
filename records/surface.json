@@ -2,7 +2,7 @@
   "schema": "computedriven-surface-v1",
   "_comment": "The frozen record this surface is generated from. build-site.mjs reads it and emits index.html; launch-gate.mjs reads the EMITTED index.html and refuses to publish when the artifact and this file disagree. Nothing on the page may state a rung, a status or a scope that is not here.",
 
-  "shell_revision": "shell-r4",
+  "shell_revision": "shell-r10",
   "_shell_revision_comment": "The revision of agents/SHELL.md this surface was built against. SHELL.md's own revision block asks for it, and the reason is good: every lane so far has found a defect in that document, and a surface that records which revision it was built against is the only way to know later which pages carry a fix and which predate it. r4 = tier-4 band variant, --fg3 at .55, §8 identifying animation required. NOTE: the revision block was added to SHELL.md while this lane was running; the document read at the start of the run already contained all of r2, r3 and r4, so this surface is r4 in substance as well as in label.",
 
   "version": "0.3.0",
@@ -24,6 +24,44 @@
   "rung_witness": "deployed_health_check",
   "_rung_witness_comment": "Which gate establishes the surface rung. launch-gate.mjs refuses if THAT gate is not approved. GPSCoord's rule — any pending gate keeps the surface below live_deployed — is too blunt: independent_use is pending forever by construction, so under that rule no surface could ever reach a deployed rung.",
   "verified_at": "2026-08-16",
+
+  "type_metrics": {
+    "_comment": "SHELL.md r7. A line box smaller than the display face's own box makes consecutive lines' em boxes overlap and a descender reads as clipped — Travis reported it as the g of 'agents' being cut off on agentromatic. MEASURED, not assumed: each element's text was rendered to a canvas in its own computed font and canvas measureText's fontBoundingBoxAscent+Descent (the face's own box) and actualBoundingBoxAscent+Descent (this string's ink) were compared against the line box, at viewport widths 390 and 1280, against the served page. BOTH bounds matter and each of the three governance sites was worst on a different one: Syne overflowed its font box by 12.09 px while its ink fitted with 7.91 px to spare; Newsreader's font box fitted and its INK cleared by 0.91 px. required_ratio is max(font_box_ratio, ink_box_ratio) + 0.04; the margin absorbs the +-1 px integer quantisation of fontBoundingBox (Syne at 20 px reports 25, which is 1.25 rather than its 1.2043) and leaves visible clearance. launch-gate reads line-height back out of the EMITTED stylesheet and refuses below required_ratio. These numbers belong to this face at these weights; another surface must re-measure rather than copy them.",
+    "measured_at": "2026-08-17",
+    "measured_with": "agent-browser --session triofix (Chrome), canvas measureText in each element's own computed font, viewport widths 390 and 1280, against the served page",
+    "display_face": "Archivo",
+    "margin": 0.04,
+    "selectors": {
+      "h1": {
+        "face": "Archivo",
+        "weight": 600,
+        "font_box_px": "72 px at 65.6 px, 40 px at 36.8 px",
+        "font_box_ratio": 1.0976,
+        "ink_box_ratio": 0.8994,
+        "required_ratio": 1.1376,
+        "line_height": 1.18
+      },
+      "h2": {
+        "face": "Archivo",
+        "weight": 600,
+        "font_box_px": "43 px at 40 px, 30 px at 27.2 px",
+        "font_box_ratio": 1.1029,
+        "ink_box_ratio": 0.925,
+        "required_ratio": 1.1429,
+        "line_height": 1.18
+      },
+      ".q": {
+        "face": "Archivo",
+        "weight": 500,
+        "font_box_px": "30 px at 27.2 px, 22 px at 20 px",
+        "font_box_ratio": 1.1029,
+        "ink_box_ratio": 0.95,
+        "required_ratio": 1.1429,
+        "line_height": 1.25
+      }
+    }
+  },
+
 
   "status": {
     "statement": "A policy kernel is deployed and answers. Eight modules, three test files, forty-two tests, six MCP tools, five typed refusal reasons. FleetPrompt calls delegatic_authorize to authorize an install and the kernel answers with a signed, expiring authorization block or a typed refusal. The governance platform described on this page — org trees, policy cascade, compliance proofs, the dashboard — is none of it written.",
@@ -73,10 +111,44 @@
     ]
   },
 
+  "retraction_blocklist": {
+    "_comment": "SHELL.md r6, hole 1. The old check asked 'is the retraction present?' and stopped, so a page could KEEP its retraction and reinstate the retracted sentence anywhere else and still pass — a real deliberate break did exactly that. Presence is not the property; CONFINEMENT is. Every needle below is counted in the raw artifact AND in the r8-correct extracted text, and every occurrence must fall inside the retraction region. `max_total` bounds the count so the retraction cannot be padded with reinstated copies of what it retracts. Counts are the ones measured at the commit that introduced this field; a needle whose count changes is a page whose retraction changed, and the gate refuses either way.",
+    "region": "div.retract",
+    "terms": [
+      {
+        "needle": "mailto:",
+        "max_total": 1,
+        "why": "The footer mailbox removed 2026-08-16. Named once inside the retraction, nowhere else."
+      },
+      {
+        "needle": "Launching 2026",
+        "max_total": 1,
+        "why": "The retracted promise. Once, inside the retraction, quoted."
+      },
+      {
+        "needle": "Enterprise governance",
+        "max_total": 1,
+        "why": "The retracted claim. Once, inside the retraction, quoted."
+      },
+      {
+        "needle": "Open-source core",
+        "max_total": 1,
+        "why": "The retracted claim. Once, inside the retraction, quoted."
+      },
+      {
+        "needle": "wired to nothing",
+        "max_total": 1,
+        "why": "The charge against the old box. Once."
+      }
+    ]
+  },
+
   "contact": {
-    "kind": "github_issues",
+    "kind": "formspree",
+    "form_endpoint": "https://formspree.io/f/xaewoadr",
     "url": "https://github.com/c-u-l8er/delegatic.com/issues",
-    "_comment": "This page carried `mailto:hello@ampersandboxdesign.com` in its footer until this revision — Cloudflare was obfuscating it at the edge, which is how the served page measured +159 bytes against the local file. Removed: no mailto:, Travis's call 2026-08-11. No Formspree endpoint exists for this domain and borrowing toolboxhvac's needs a ruling, so corrections go to GitHub issues. [TRAVIS]"
+    "second_route": "github_issues",
+    "_comment": "SHELL.md r9, ruled by Travis 2026-08-17. Contact is the ComputeDriven Formspree form and `form_endpoint` is where it posts — the same endpoint computedriven.com uses. This closes the [TRAVIS] item fourteen surfaces were blocked on; until today this record said 'no Formspree endpoint exists for this domain and borrowing another's needs a ruling', and corrections went to GitHub issues. `url` is kept as the SECOND route, not the first, and `kind` stays not-mailto: this page carried mailto:hello@ampersandboxdesign.com until 2026-08-16 and the gate still refuses one anywhere in the artifact. The form is a real <form action method=POST>, so it delivers with JavaScript off; src/say.js only upgrades it to an inline reply and prints success solely on a 2xx."
   },
 
   "gates": {
