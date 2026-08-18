@@ -426,9 +426,11 @@ T("the LIMIT row names something the evidence does NOT establish",
        applied here the same day, for the same reason: the payload and the
        download are bounded separately. Both still bite — 5,054 / 9,687.
 
-       agentromatic, fleetprompt and specprompt STILL CARRY THE SINGLE CAP and
-       have the headroom for it. Recorded so the divergence is visible rather
-       than discovered. */
+       WHICH OTHER SURFACES HAVE TAKEN THIS IS NOT LISTED HERE. It was, twice,
+       and both lists were false within a day — a note about a neighbour rots on
+       the neighbour's schedule, not on this one's. Check the neighbour's own
+       gate. What is true here: this surface bounds payload and download
+       separately, from 2026-08-17. */
     T("the animation's executable payload stays cheap enough for a phone",
         CODE.length < 9000, `${CODE.length.toLocaleString()} chars of code`);
     T("the animation stays a small download",

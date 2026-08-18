@@ -1,6 +1,6 @@
 {
   "_comment": "SHELL.md r6 hole 2. Written by build-site.mjs at the moment it emitted the artifact, and verified by launch-gate.mjs before it reads anything else. `inputs` is what the build read; `outputs` is what it wrote. If the build throws, this file is not rewritten, so a stale index.html no longer agrees with the sources beside it and the gate refuses. Do not hand-edit this file: it is a measurement, and editing it to make the gate pass is the one thing it exists to prevent.",
-  "built_at": "2026-08-17T23:41:09.645Z",
+  "built_at": "2026-08-18T00:13:47.046Z",
   "builder": "build-site.mjs",
   "inputs": {
     "records/surface.json": "fe70b3b668a58e984bae4c4fb03d31cccd6614da4221d496b18f148f403819d1",
